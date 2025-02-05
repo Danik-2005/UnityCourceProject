@@ -1,0 +1,83 @@
+# Папка с примерами
+/example/ 
+
+# Папка с материалами
+/resources/ 
+
+# Временный файлы blender
+*.blend1
+*.blend2
+*.blend~
+
+
+
+
+
+
+
+
+
+# This .gitignore file should be placed at the root of your Git repository
+# and will ignore files in the 'guitar_simulator' subfolder where your Unity project resides
+
+# Ignore Unity-specific directories and files in 'guitar_simulator' directory
+**/guitar_simulator/[Ll]ibrary/
+**/guitar_simulator/[Tt]emp/
+**/guitar_simulator/[Oo]bj/
+**/guitar_simulator/[Bb]uild/
+**/guitar_simulator/[Bb]uilds/
+**/guitar_simulator/[Ll]ogs/
+**/guitar_simulator/[Uu]ser[Ss]ettings/
+
+**/guitar_simulator/[Mm]emoryCaptures/
+**/guitar_simulator/[Rr]ecordings/
+
+**/guitar_simulator/[Aa]ssets/AssetStoreTools*
+
+**/guitar_simulator/[Aa]ssets/Plugins/Editor/JetBrains*
+
+**/guitar_simulator/.vs/
+**/guitar_simulator.gradle/
+
+# Ignore generated project files
+**/guitar_simulator/ExportedObj/
+**/guitar_simulator/.consulo/
+**/guitar_simulator/*.csproj
+**/guitar_simulator/*.unityproj
+**/guitar_simulator/*.sln
+**/guitar_simulator/*.suo
+**/guitar_simulator/*.tmp
+**/guitar_simulator/*.user
+**/guitar_simulator/*.userprefs
+**/guitar_simulator/*.pidb
+**/guitar_simulator/*.booproj
+**/guitar_simulator/*.svd
+**/guitar_simulator/*.pdb
+**/guitar_simulator/*.mdb
+**/guitar_simulator/*.opendb
+**/guitar_simulator/*.VC.db
+
+# Ignore Unity3D meta files
+**/guitar_simulator/*.pidb.meta
+**/guitar_simulator/*.pdb.meta
+**/guitar_simulator/*.mdb.meta
+
+# Ignore crash reports
+**/guitar_simulator/sysinfo.txt
+
+# Ignore builds and packaged assets
+**/guitar_simulator/*.apk
+**/guitar_simulator/*.aab
+**/guitar_simulator/*.unitypackage
+**/guitar_simulator/*.unitypackage.meta
+**/guitar_simulator/*.app
+
+# Ignore Crashlytics files
+**/guitar_simulator/crashlytics-build.properties
+
+# Ignore packed addressables
+**/guitar_simulator/[Aa]ssets/[Aa]ddressable[Aa]ssets[Dd]ata/*/*.bin*
+
+# Ignore temporary Android assets
+**/guitar_simulator/[Aa]ssets/[Ss]treamingAssets/aa.meta
+**/guitar_simulator/[Aa]ssets/[Ss]treamingAssets/aa/*
