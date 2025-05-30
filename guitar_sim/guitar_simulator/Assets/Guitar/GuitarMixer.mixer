@@ -70,11 +70,11 @@ AudioMixerController:
   m_UpdateMode: 0
   m_ExposedParameters:
   - guid: 9fde723c21b7d1f41bcc433e73a1cee1
-    name: MyExposedParam 2
+    name: GuitarVolume
   - guid: fe9d891cd7c36874bb21a734dc074a60
-    name: MyExposedParam
+    name: GuitarBassHPF
   - guid: 8cacb15edd850d346b59e707bbfc2909
-    name: MyExposedParam 1
+    name: GuitarToneLPF
   m_AudioMixerGroupViews:
   - guids:
     - 999941fa8b19161499553712e80c79d7
@@ -125,7 +125,10 @@ AudioMixerSnapshotController:
   m_Name: Snapshot
   m_AudioMixer: {fileID: 24100000}
   m_SnapshotID: 69f6abb9f098bee41ae0e7d6be7e9434
-  m_FloatValues: {}
+  m_FloatValues:
+    fe9d891cd7c36874bb21a734dc074a60: 100
+    9fde723c21b7d1f41bcc433e73a1cee1: 0.006548249
+    8cacb15edd850d346b59e707bbfc2909: 3092
   m_TransitionOverrides: {}
 --- !u!244 &1992622035212459678
 AudioMixerEffectController:

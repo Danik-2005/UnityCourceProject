@@ -10,6 +10,7 @@ public class GuitarKnobsController : MonoBehaviour
     [SerializeField] private string volumeParameter = "GuitarVolume";
     [SerializeField] private string toneParameter = "GuitarToneLPF";
     [SerializeField] private string bassParameter = "GuitarBassHPF";
+    [SerializeField] private string pitchParameter = "GuitarPitch"; // Параметр для тремоло
 
     [Header("Current Values")]
     [Range(0f, 1f)]
@@ -18,12 +19,18 @@ public class GuitarKnobsController : MonoBehaviour
     public float toneKnob = 1f;
     [Range(0f, 1f)]
     public float bassKnob = 0.5f;
+    [Range(0.5f, 2f)]
+    public float currentPitch = 1f; // Текущий питч (1 = нормальный, <1 = ниже, >1 = выше)
 
     [Header("Filter Ranges")]
     public float minToneFreq = 350f;   // Минимальная частота для тона (Low Pass Filter)
     public float maxToneFreq = 22000f;  // Максимальная частота для тона
     public float minBassFreq = 20f;    // Минимальная частота для баса (High Pass Filter)
     public float maxBassFreq = 2000f;   // Максимальная частота для баса
+
+    [Header("Tremolo Settings")]
+    public float minPitch = 0.5f;     // Минимальный питч (октава вниз)
+    public float maxPitch = 2f;       // Максимальный питч (октава вверх)
 
     private bool parametersVerified = false;
 
@@ -53,6 +60,7 @@ public class GuitarKnobsController : MonoBehaviour
         bool volumeExists = guitarMixer.GetFloat(volumeParameter, out testValue);
         bool toneExists = guitarMixer.GetFloat(toneParameter, out testValue);
         bool bassExists = guitarMixer.GetFloat(bassParameter, out testValue);
+        bool pitchExists = guitarMixer.GetFloat(pitchParameter, out testValue);
 
         if (!volumeExists)
             Debug.LogError($"Parameter '{volumeParameter}' not found in AudioMixer! Check if it's exposed.");
@@ -60,8 +68,10 @@ public class GuitarKnobsController : MonoBehaviour
             Debug.LogError($"Parameter '{toneParameter}' not found in AudioMixer! Check if it's exposed.");
         if (!bassExists)
             Debug.LogError($"Parameter '{bassParameter}' not found in AudioMixer! Check if it's exposed.");
+        if (!pitchExists)
+            Debug.LogError($"Parameter '{pitchParameter}' not found in AudioMixer! Check if it's exposed.");
 
-        parametersVerified = volumeExists && toneExists && bassExists;
+        parametersVerified = volumeExists && toneExists && bassExists && pitchExists;
         
         if (parametersVerified)
             Debug.Log("All AudioMixer parameters verified successfully!");
@@ -73,15 +83,17 @@ public class GuitarKnobsController : MonoBehaviour
     {
         if (!parametersVerified) return;
 
-        float currentVolume, currentTone, currentBass;
+        float currentVolume, currentTone, currentBass, currentPitchValue;
         guitarMixer.GetFloat(volumeParameter, out currentVolume);
         guitarMixer.GetFloat(toneParameter, out currentTone);
         guitarMixer.GetFloat(bassParameter, out currentBass);
+        guitarMixer.GetFloat(pitchParameter, out currentPitchValue);
 
         Debug.Log($"Current Mixer Values:\n" +
                  $"Volume: {currentVolume:F1}dB\n" +
                  $"Tone LPF: {currentTone:F0}Hz\n" +
-                 $"Bass HPF: {currentBass:F0}Hz");
+                 $"Bass HPF: {currentBass:F0}Hz\n" +
+                 $"Pitch: {currentPitchValue:F2}");
     }
 
     public void UpdateAllParameters()
@@ -105,7 +117,11 @@ public class GuitarKnobsController : MonoBehaviour
             if (!guitarMixer.SetFloat(bassParameter, bassFreq))
                 Debug.LogError($"Failed to set {bassParameter}");
 
-            Debug.Log($"Updated mixer - Vol: {volumeDb:F1}dB, Tone: {toneFreq:F0}Hz, Bass: {bassFreq:F0}Hz");
+            // Pitch: устанавливаем текущий питч
+            if (!guitarMixer.SetFloat(pitchParameter, currentPitch))
+                Debug.LogError($"Failed to set {pitchParameter}");
+
+            Debug.Log($"Updated mixer - Vol: {volumeDb:F1}dB, Tone: {toneFreq:F0}Hz, Bass: {bassFreq:F0}Hz, Pitch: {currentPitch:F2}");
         }
         catch (System.Exception e)
         {
@@ -129,6 +145,13 @@ public class GuitarKnobsController : MonoBehaviour
     public void SetBass(float value)
     {
         bassKnob = Mathf.Clamp01(value);
+        UpdateAllParameters();
+    }
+
+    // Метод для управления тремоло
+    public void SetPitch(float value)
+    {
+        currentPitch = Mathf.Clamp(value, minPitch, maxPitch);
         UpdateAllParameters();
     }
 } 
