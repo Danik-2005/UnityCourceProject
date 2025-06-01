@@ -49,10 +49,33 @@ AudioMixerGroupController:
   - {fileID: -8870271334905983128}
   - {fileID: 1992622035212459678}
   - {fileID: -7901830103743992042}
+  - {fileID: -4520515778889269788}
   m_UserColorIndex: 0
   m_Mute: 0
   m_Solo: 0
   m_BypassEffects: 0
+--- !u!244 &-4520515778889269788
+AudioMixerEffectController:
+  m_ObjectHideFlags: 3
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: 
+  m_EffectID: 170a04942a0fa384f946b3450ff1c63d
+  m_EffectName: Pitch Shifter
+  m_MixLevel: 60c0194218d2ceb4382b34a3da1be5ce
+  m_Parameters:
+  - m_ParameterName: Pitch
+    m_GUID: ea0a1f5682970834ba19fea66028c3c0
+  - m_ParameterName: FFT size
+    m_GUID: 343f44d5c7607204abd9ea3c1c30e27b
+  - m_ParameterName: Overlap
+    m_GUID: c6d9e8d87b684344db64248c4fe10685
+  - m_ParameterName: Max channels
+    m_GUID: d4809c16ac54ccb4f9917fb10eaedcb7
+  m_SendTarget: {fileID: 0}
+  m_EnableWetMix: 0
+  m_Bypass: 0
 --- !u!241 &24100000
 AudioMixerController:
   m_ObjectHideFlags: 0
@@ -75,6 +98,8 @@ AudioMixerController:
     name: GuitarBassHPF
   - guid: 8cacb15edd850d346b59e707bbfc2909
     name: GuitarToneLPF
+  - guid: ea0a1f5682970834ba19fea66028c3c0
+    name: GuitarPitch
   m_AudioMixerGroupViews:
   - guids:
     - 999941fa8b19161499553712e80c79d7
