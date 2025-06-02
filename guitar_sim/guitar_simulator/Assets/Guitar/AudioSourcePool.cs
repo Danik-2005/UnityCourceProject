@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.Audio;
 using System.Collections.Generic;
+using System.Linq;
 
 public class AudioSourcePool : MonoBehaviour
 {
@@ -11,7 +12,8 @@ public class AudioSourcePool : MonoBehaviour
     public AudioMixerGroup guitarMixerGroup; // Ссылка на группу Guitar в миксере
     public int poolSize = 32;
 
-    private Queue<AudioSource> pool = new Queue<AudioSource>();
+    private Queue<AudioSource> inactiveSources = new Queue<AudioSource>();
+    private HashSet<AudioSource> activeSources = new HashSet<AudioSource>();
 
     void Awake()
     {
@@ -32,10 +34,22 @@ public class AudioSourcePool : MonoBehaviour
         {
             var source = Instantiate(audioSourcePrefab, transform);
             ConfigureAudioSource(source);
-            pool.Enqueue(source);
+            inactiveSources.Enqueue(source);
         }
 
-        Debug.Log($"AudioSourcePool initialized with {poolSize} sources, using mixer group: {guitarMixerGroup.name}");
+        Debug.Log($"AudioSourcePool initialized with {poolSize} sources");
+    }
+
+    private void Update()
+    {
+        // Проверяем и возвращаем в пул неактивные источники
+        foreach (var source in new HashSet<AudioSource>(activeSources))
+        {
+            if (!source.isPlaying)
+            {
+                ReturnToPool(source);
+            }
+        }
     }
 
     private void ConfigureAudioSource(AudioSource source)
@@ -49,28 +63,58 @@ public class AudioSourcePool : MonoBehaviour
 
     public AudioSource GetSource()
     {
-        AudioSource source = pool.Dequeue();
+        AudioSource source;
+        
+        // Если в пуле нет свободных источников, ищем неактивный среди активных
+        if (inactiveSources.Count == 0)
+        {
+            source = activeSources.FirstOrDefault(s => !s.isPlaying);
+            if (source != null)
+            {
+                activeSources.Remove(source);
+            }
+            else
+            {
+                Debug.LogWarning("No available audio sources in pool!");
+                return null;
+            }
+        }
+        else
+        {
+            source = inactiveSources.Dequeue();
+        }
+
         source.gameObject.SetActive(true);
         
-        // На всякий случай проверяем настройки
+        // Проверяем настройки
         if (source.outputAudioMixerGroup != guitarMixerGroup)
         {
             source.outputAudioMixerGroup = guitarMixerGroup;
             Debug.Log($"Restored mixer group for source: {source.name}");
         }
         
-        pool.Enqueue(source);
+        activeSources.Add(source);
         return source;
+    }
+
+    private void ReturnToPool(AudioSource source)
+    {
+        if (source == null) return;
+
+        source.Stop();
+        source.clip = null;
+        source.gameObject.SetActive(false);
+        activeSources.Remove(source);
+        inactiveSources.Enqueue(source);
     }
 
     public void StopAllSources()
     {
-        foreach (var source in pool)
+        foreach (var source in activeSources)
         {
             if (source != null)
             {
-                source.Stop();
-                source.gameObject.SetActive(false);
+                ReturnToPool(source);
             }
         }
     }
@@ -78,7 +122,7 @@ public class AudioSourcePool : MonoBehaviour
     // Метод для проверки и исправления настроек всех источников
     public void ValidateAllSources()
     {
-        foreach (var source in pool)
+        foreach (var source in activeSources)
         {
             if (source != null && source.outputAudioMixerGroup != guitarMixerGroup)
             {
@@ -86,5 +130,10 @@ public class AudioSourcePool : MonoBehaviour
                 Debug.Log($"Fixed mixer group for source: {source.name}");
             }
         }
+    }
+
+    private void OnDisable()
+    {
+        StopAllSources();
     }
 }
