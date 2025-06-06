@@ -12,4 +12,11 @@ public class GuitarNote
         this.sample = sample;
         this.pitchMultiplier = Mathf.Pow(2f, (midiNote - baseMidiNote) / 12f);
     }
+
+    public GuitarNote(int midiNote, AudioClip sample, int baseMidiNote, float pitchMultiplier)
+    {
+        this.midiNote = midiNote;
+        this.sample = sample;
+        this.pitchMultiplier = pitchMultiplier;
+    }
 }

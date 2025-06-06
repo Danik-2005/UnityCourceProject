@@ -7,6 +7,7 @@ public class NoteSampleBank : MonoBehaviour
     public static NoteSampleBank Instance { get; private set; }
 
     private Dictionary<(PickupType, int, int), AudioClip> sampleMap = new();
+    private Dictionary<int, int[]> recordedFretsForString = new();
 
     void Awake()
     {
@@ -43,84 +44,90 @@ public class NoteSampleBank : MonoBehaviour
             int fret = int.Parse(match.Groups[3].Value);
 
             sampleMap[(pickup, stringNum, fret)] = clip;
+            
+            // Сохраняем информацию о записанных ладах для каждой струны
+            if (!recordedFretsForString.ContainsKey(stringNum))
+            {
+                recordedFretsForString[stringNum] = new int[] { fret };
+            }
+            else
+            {
+                var currentFrets = recordedFretsForString[stringNum];
+                var newFrets = new int[currentFrets.Length + 1];
+                currentFrets.CopyTo(newFrets, 0);
+                newFrets[currentFrets.Length] = fret;
+                recordedFretsForString[stringNum] = newFrets;
+            }
+            
             Debug.Log($"Added clip {clip.name} for pickup:{pickup}, string:{stringNum}, fret:{fret}");
         }
         Debug.Log($"Total clips in sampleMap: {sampleMap.Count}");
     }
 
-    public Dictionary<PickupType, Dictionary<int, (AudioClip clip, int baseMidiNote)>> GetSamplesForString(int stringNum)
+    public (AudioClip clip, bool isExactMatch, int baseFret) GetClipForStringAndFret(int stringNum, int fret, PickupType pickup)
     {
-        var result = new Dictionary<PickupType, Dictionary<int, (AudioClip, int)>>();
-
-        foreach (var pickup in System.Enum.GetValues(typeof(PickupType)))
+        // Сначала пробуем найти точное совпадение
+        if (sampleMap.TryGetValue((pickup, stringNum, fret), out var exactClip))
         {
-            var p = (PickupType)pickup;
-            result[p] = new();
+            Debug.Log($"[NoteSampleBank] Found exact sample for string {stringNum}, fret {fret}");
+            return (exactClip, true, fret);
+        }
 
-            for (int fret = 0; fret <= 21; fret++)
+        // Если точного совпадения нет, ищем ближайший записанный лад для этой струны
+        if (recordedFretsForString.TryGetValue(stringNum, out var recordedFrets))
+        {
+            int closestFret = recordedFrets[0];
+            int minDistance = Mathf.Abs(fret - closestFret);
+
+            foreach (int recordedFret in recordedFrets)
             {
-                if (sampleMap.TryGetValue((p, stringNum, fret), out var clip))
+                int distance = Mathf.Abs(fret - recordedFret);
+                if (distance < minDistance)
                 {
-                    int midi = GetOpenNoteForString(stringNum) + fret;
-                    result[p][fret] = (clip, midi);
+                    minDistance = distance;
+                    closestFret = recordedFret;
                 }
+            }
+
+            if (sampleMap.TryGetValue((pickup, stringNum, closestFret), out var nearestClip))
+            {
+                Debug.Log($"[NoteSampleBank] Using nearest sample for string {stringNum}: fret {closestFret} instead of {fret}");
+                return (nearestClip, false, closestFret);
             }
         }
 
-        return result;
+        Debug.LogWarning($"[NoteSampleBank] No suitable sample found for string {stringNum}, fret {fret}");
+        return (null, false, -1);
     }
-
-    private int GetOpenNoteForString(int stringNum) =>
-        stringNum switch
-        {
-            6 => 40,
-            5 => 45,
-            4 => 50,
-            3 => 55,
-            2 => 59,
-            1 => 64,
-            _ => 40
-        };
 
     public AudioClip GetClipForNote(int midiNote, PickupType pickup)
     {
-        // Find the best string to play this note on
+        // Этот метод оставлен для обратной совместимости
+        // Находим подходящую струну для этой ноты
         for (int stringNum = 6; stringNum >= 1; stringNum--)
         {
             int openNote = GetOpenNoteForString(stringNum);
             int fret = midiNote - openNote;
             
-            // Check if the note is playable on this string (fret 0-21)
-            if (fret >= 0 && fret <= 21)
+            if (fret >= 0 && fret <= 22)
             {
-                // Try to get the exact sample
-                if (sampleMap.TryGetValue((pickup, stringNum, fret), out var clip))
-                {
-                    return clip;
-                }
-
-                // If no exact sample, find the nearest recorded fret
-                int[] recordedFrets = new[] { 0, 7, 14, 21 };
-                int nearestFret = recordedFrets[0];
-                int minDistance = Mathf.Abs(fret - recordedFrets[0]);
-
-                foreach (int recordedFret in recordedFrets)
-                {
-                    int distance = Mathf.Abs(fret - recordedFret);
-                    if (distance < minDistance)
-                    {
-                        minDistance = distance;
-                        nearestFret = recordedFret;
-                    }
-                }
-
-                if (sampleMap.TryGetValue((pickup, stringNum, nearestFret), out var nearestClip))
-                {
-                    return nearestClip;
-                }
+                var (clip, _, _) = GetClipForStringAndFret(stringNum, fret, pickup);
+                return clip;
             }
         }
-
+        
         return null;
     }
+
+    private int GetOpenNoteForString(int stringNum) =>
+        stringNum switch
+        {
+            6 => 40, // E2
+            5 => 45, // A2
+            4 => 50, // D3
+            3 => 55, // G3
+            2 => 59, // B3
+            1 => 64, // E4
+            _ => 40  // Default to E2
+        };
 }

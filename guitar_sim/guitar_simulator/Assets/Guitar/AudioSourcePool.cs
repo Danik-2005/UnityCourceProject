@@ -97,7 +97,7 @@ public class AudioSourcePool : MonoBehaviour
         return source;
     }
 
-    private void ReturnToPool(AudioSource source)
+    public void ReturnToPool(AudioSource source)
     {
         if (source == null) return;
 
@@ -107,6 +107,9 @@ public class AudioSourcePool : MonoBehaviour
         activeSources.Remove(source);
         inactiveSources.Enqueue(source);
     }
+
+    // Alias for ReturnToPool for better API consistency
+    public void ReturnSource(AudioSource source) => ReturnToPool(source);
 
     public void StopAllSources()
     {

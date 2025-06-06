@@ -12,59 +12,35 @@ public class GuitarString
         this.stringNumber = stringNumber;
         openMidiNote = GetOpenNoteForString(stringNumber);
 
-        var samplesByPickup = NoteSampleBank.Instance.GetSamplesForString(stringNumber);
-
-        foreach (var kvp in samplesByPickup)
+        // Создаем ноты для всех ладов
+        for (int fret = 0; fret <= 22; fret++)
         {
-            foreach (var (fret, sampleData) in kvp.Value)
+            int midiNote = openMidiNote + fret;
+            var (clip, isExactMatch, baseFret) = NoteSampleBank.Instance.GetClipForStringAndFret(stringNumber, fret, PickupType.Neck);
+            
+            if (clip != null)
             {
-                int midi = openMidiNote + fret;
-                notes[midi] = new GuitarNote(midi, sampleData.clip, midi);
-            }
-        }
-
-        for (int fret = 0; fret <= 21; fret++)
-        {
-            int midi = openMidiNote + fret;
-            if (!notes.ContainsKey(midi))
-            {
-                var nearest = FindNearestSample(fret, samplesByPickup);
-                if (nearest != null)
-                    notes[midi] = new GuitarNote(midi, nearest.Value.clip, nearest.Value.baseMidiNote);
-            }
-        }
-    }
-
-    private (AudioClip clip, int baseMidiNote)? FindNearestSample(int fret, Dictionary<PickupType, Dictionary<int, (AudioClip clip, int baseMidiNote)>> pickups)
-    {
-        foreach (var pickup in pickups.Values)
-        {
-            int minDist = int.MaxValue;
-            (AudioClip, int)? best = null;
-            foreach (var (f, data) in pickup)
-            {
-                int d = Mathf.Abs(f - fret);
-                if (d < minDist)
+                float pitchMultiplier = 1f;
+                if (!isExactMatch)
                 {
-                    minDist = d;
-                    best = data;
+                    float fretDifference = fret - baseFret;
+                    pitchMultiplier = Mathf.Pow(2f, fretDifference / 12f);
                 }
+                notes[midiNote] = new GuitarNote(midiNote, clip, midiNote, pitchMultiplier);
             }
-            if (best.HasValue) return best.Value;
         }
-        return null;
     }
 
     private int GetOpenNoteForString(int stringNum) =>
         stringNum switch
         {
-            6 => 40,
-            5 => 45,
-            4 => 50,
-            3 => 55,
-            2 => 59,
-            1 => 64,
-            _ => 40
+            6 => 40, // E2
+            5 => 45, // A2
+            4 => 50, // D3
+            3 => 55, // G3
+            2 => 59, // B3
+            1 => 64, // E4
+            _ => 40  // Default to E2
         };
 }
 

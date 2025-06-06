@@ -3,30 +3,17 @@ using UnityEngine;
 
 public class GuitarInstrument : MonoBehaviour
 {
-    public AudioSource audioSourcePrefab;
-    public PickupType pickup = PickupType.Neck;
-
-    private Dictionary<int, GuitarString> strings = new();
-
-    void Start()
+    private void Start()
     {
-        for (int s = 1; s <= 6; s++)
+        if (GuitarSoundSystem.Instance == null)
         {
-            strings[s] = new GuitarString(s);
+            Debug.LogError("GuitarSoundSystem not found!");
+            return;
         }
     }
 
     public void PlayNote(int stringNum, int fret)
     {
-        if (!strings.TryGetValue(stringNum, out var guitarString)) return;
-
-        int midi = guitarString.openMidiNote + fret;
-        if (!guitarString.notes.TryGetValue(midi, out var note)) return;
-
-        var source = Instantiate(audioSourcePrefab, transform);
-        source.clip = note.sample;
-        source.pitch = note.pitchMultiplier;
-        source.Play();
-        Destroy(source.gameObject, note.sample.length / source.pitch + 0.2f);
+        GuitarSoundSystem.Instance.PlayNote(stringNum, fret);
     }
 }

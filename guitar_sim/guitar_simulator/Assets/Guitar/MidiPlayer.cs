@@ -20,9 +20,9 @@ public class MidiPlayer : MonoBehaviour
             StopPlayback();
         }
 
-        if (GuitarSoundEngine.Instance == null)
+        if (GuitarSoundSystem.Instance == null)
         {
-            Debug.LogError("GuitarSoundEngine not found!");
+            Debug.LogError("GuitarSoundSystem not found!");
             return;
         }
 
@@ -38,8 +38,8 @@ public class MidiPlayer : MonoBehaviour
             float noteStartTime = (float)metricTime.TotalSeconds / bpmMultiplier;
             float noteDuration = (float)metricLength.TotalSeconds / bpmMultiplier;
 
-            // Находим подходящую струну и лад для ноты
-            (int stringNumber, int fretNumber) = FindBestStringAndFret(note.NoteNumber);
+            // Используем новый метод из GuitarSoundSystem для поиска струны и лада
+            var (stringNumber, fretNumber) = GuitarSoundSystem.Instance.FindBestStringAndFret(note.NoteNumber);
             if (stringNumber != -1)
             {
                 var coroutine = StartCoroutine(PlayNoteWithTiming(noteStartTime, noteDuration, stringNumber, fretNumber));
@@ -53,7 +53,6 @@ public class MidiPlayer : MonoBehaviour
         bpmMultiplier = Mathf.Clamp(multiplier, 0.1f, 2f);
         if (isPlaying)
         {
-            // Перезапускаем воспроизведение с новым темпом
             LoadAndPlayMidi();
         }
     }
@@ -61,41 +60,11 @@ public class MidiPlayer : MonoBehaviour
     private IEnumerator PlayNoteWithTiming(float startTime, float duration, int stringNumber, int fretNumber)
     {
         yield return new WaitForSeconds(startTime);
-        GuitarSoundEngine.Instance.StartNote(stringNumber, fretNumber);
+        GuitarSoundSystem.Instance.PlayNote(stringNumber, fretNumber);
         
         yield return new WaitForSeconds(duration);
-        GuitarSoundEngine.Instance.StopNote(stringNumber, fretNumber);
+        GuitarSoundSystem.Instance.StopNote(stringNumber, fretNumber);
     }
-
-    private (int stringNumber, int fretNumber) FindBestStringAndFret(int targetNote)
-    {
-        // Перебираем все струны от 6-й к 1-й
-        for (int stringNum = 6; stringNum >= 1; stringNum--)
-        {
-            int openNote = GetOpenNoteForString(stringNum);
-            int fret = targetNote - openNote;
-            
-            // Проверяем, можно ли сыграть эту ноту на данной струне
-            if (fret >= 0 && fret <= 22)
-            {
-                return (stringNum, fret);
-            }
-        }
-        
-        return (-1, -1);
-    }
-
-    private int GetOpenNoteForString(int stringNum) =>
-        stringNum switch
-        {
-            6 => 40, // E2
-            5 => 45, // A2
-            4 => 50, // D3
-            3 => 55, // G3
-            2 => 59, // B3
-            1 => 64, // E4
-            _ => 40  // Default to E2
-        };
 
     public void StopPlayback()
     {
@@ -110,9 +79,9 @@ public class MidiPlayer : MonoBehaviour
         }
         activeCoroutines.Clear();
 
-        if (GuitarSoundEngine.Instance != null)
+        if (GuitarSoundSystem.Instance != null)
         {
-            GuitarSoundEngine.Instance.StopAllNotes(true);
+            GuitarSoundSystem.Instance.StopAllNotes(true);
         }
     }
 }
