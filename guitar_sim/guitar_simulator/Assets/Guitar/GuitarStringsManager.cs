@@ -34,6 +34,28 @@ public class GuitarStringsManager : MonoBehaviour
     public int numberOfFrets = 22;
 
     private List<GuitarStringVisual> strings = new List<GuitarStringVisual>();
+    private static GuitarStringsManager instance;
+    public static GuitarStringsManager Instance
+    {
+        get
+        {
+            if (instance == null)
+            {
+                instance = FindObjectOfType<GuitarStringsManager>();
+            }
+            return instance;
+        }
+    }
+
+    void Awake()
+    {
+        if (instance != null && instance != this)
+        {
+            Destroy(gameObject);
+            return;
+        }
+        instance = this;
+    }
 
     void Start()
     {
@@ -78,15 +100,88 @@ public class GuitarStringsManager : MonoBehaviour
         }
     }
 
+    // Метод для проигрывания ноты с подсветкой (используется для MIDI и прямых нажатий)
+    public void PlayNoteWithVisuals(int stringNumber, int fret)
+    {
+        if (stringNumber < 1 || stringNumber > 6)
+        {
+            Debug.LogWarning($"Invalid string number: {stringNumber}");
+            return;
+        }
+
+        GuitarStringVisual stringVisual = strings[stringNumber - 1];
+        stringVisual.PlayNoteWithVisuals(fret);
+    }
+
+    // Метод для остановки ноты и снятия подсветки
+    public void StopNoteWithVisuals(int stringNumber, int fret)
+    {
+        if (stringNumber < 1 || stringNumber > 6)
+        {
+            Debug.LogWarning($"Invalid string number: {stringNumber}");
+            return;
+        }
+
+        GuitarStringVisual stringVisual = strings[stringNumber - 1];
+        stringVisual.StopNoteWithVisuals(fret);
+    }
+
+    // Метод для проигрывания MIDI-ноты (автоматически находит подходящую струну и лад)
+    public void PlayMidiNote(int midiNote)
+    {
+        var (stringNumber, fret) = FindBestStringAndFret(midiNote);
+        if (stringNumber != -1)
+        {
+            PlayNoteWithVisuals(stringNumber, fret);
+        }
+    }
+
+    // Метод для остановки MIDI-ноты
+    public void StopMidiNote(int midiNote)
+    {
+        var (stringNumber, fret) = FindBestStringAndFret(midiNote);
+        if (stringNumber != -1)
+        {
+            StopNoteWithVisuals(stringNumber, fret);
+        }
+    }
+
+    // Находит подходящую струну и лад для MIDI-ноты
+    public (int stringNumber, int fretNumber) FindBestStringAndFret(int targetMidiNote)
+    {
+        // Перебираем все струны от 6-й к 1-й
+        for (int stringNum = 6; stringNum >= 1; stringNum--)
+        {
+            int openNote = GetOpenNoteForString(stringNum);
+            int fret = targetMidiNote - openNote;
+            
+            if (fret >= 0 && fret <= numberOfFrets)
+            {
+                return (stringNum, fret);
+            }
+        }
+        
+        return (-1, -1);
+    }
+
+    private int GetOpenNoteForString(int stringNum) =>
+        stringNum switch
+        {
+            6 => 40, // E2
+            5 => 45, // A2
+            4 => 50, // D3
+            3 => 55, // G3
+            2 => 59, // B3
+            1 => 64, // E4
+            _ => 40  // Default to E2
+        };
+
     // Вспомогательный метод для остановки всех звуков (можно вызывать при смене сцены или паузе)
     public void StopAllStrings()
     {
         foreach (var guitarString in strings)
         {
-            for (int fret = 0; fret <= numberOfFrets; fret++)
-            {
-                GuitarSoundSystem.Instance.StopNote(guitarString.stringNumber, fret, true);
-            }
+            guitarString.ResetAllMaterials();
         }
     }
 

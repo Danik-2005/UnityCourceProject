@@ -33,6 +33,7 @@ public class GuitarStringVisual : MonoBehaviour
     private int currentHighlightedFret = -1;
     private List<Vector3> segmentStartPositions = new List<Vector3>();
     private float currentVibrationAmplitude;
+    private Dictionary<int, int> activeNotes = new Dictionary<int, int>(); // fret -> count
 
     void Start()
     {
@@ -129,8 +130,17 @@ public class GuitarStringVisual : MonoBehaviour
         return stringLength * (1f - Mathf.Pow(2f, -fretNumber / 12f));
     }
 
-    public void OnFretPressed(int fret)
+    public void PlayNoteWithVisuals(int fret)
     {
+        if (fret < 0 || fret > numberOfFrets) return;
+
+        // Увеличиваем счетчик активных нот для данного лада
+        if (!activeNotes.ContainsKey(fret))
+        {
+            activeNotes[fret] = 0;
+        }
+        activeNotes[fret]++;
+
         // Проигрываем звук
         GuitarSoundSystem.Instance.PlayNote(stringNumber, fret);
         
@@ -141,19 +151,61 @@ public class GuitarStringVisual : MonoBehaviour
         HighlightFret(fret);
     }
 
-    public void OnFretReleased(int fret)
+    public void StopNoteWithVisuals(int fret)
     {
+        if (fret < 0 || fret > numberOfFrets) return;
+
+        // Уменьшаем счетчик активных нот
+        if (activeNotes.ContainsKey(fret))
+        {
+            activeNotes[fret]--;
+            if (activeNotes[fret] <= 0)
+            {
+                activeNotes.Remove(fret);
+                // Проверяем все сегменты и обновляем их материалы
+                UpdateAllSegmentMaterials();
+            }
+        }
+
         // Останавливаем звук
         GuitarSoundSystem.Instance.StopNote(stringNumber, fret);
-        
-        // Убираем подсветку
-        UnhighlightCurrentFret();
+    }
+
+    void UpdateAllSegmentMaterials()
+    {
+        // Проходим по всем сегментам и обновляем их материалы
+        for (int fret = 0; fret < stringSegments.Count; fret++)
+        {
+            var renderer = stringSegments[fret].GetComponent<Renderer>();
+            if (activeNotes.ContainsKey(fret))
+            {
+                renderer.material = highlightMaterial;
+                currentHighlightedFret = fret;
+            }
+            else
+            {
+                renderer.material = stringMaterial;
+                if (currentHighlightedFret == fret)
+                {
+                    currentHighlightedFret = -1;
+                }
+            }
+        }
+    }
+
+    // Обработчики нажатий от коллайдеров
+    public void OnFretPressed(int fret)
+    {
+        PlayNoteWithVisuals(fret);
+    }
+
+    public void OnFretReleased(int fret)
+    {
+        StopNoteWithVisuals(fret);
     }
 
     void HighlightFret(int fret)
     {
-        UnhighlightCurrentFret();
-        
         if (fret >= 0 && fret < stringSegments.Count)
         {
             var renderer = stringSegments[fret].GetComponent<Renderer>();
@@ -170,6 +222,25 @@ public class GuitarStringVisual : MonoBehaviour
             renderer.material = stringMaterial;
             currentHighlightedFret = -1;
         }
+    }
+
+    public void ResetAllMaterials()
+    {
+        // Очищаем словарь активных нот
+        activeNotes.Clear();
+        currentHighlightedFret = -1;
+        
+        // Возвращаем исходный материал всем сегментам
+        foreach (var segment in stringSegments)
+        {
+            var renderer = segment.GetComponent<Renderer>();
+            renderer.material = stringMaterial;
+        }
+    }
+
+    void OnDisable()
+    {
+        ResetAllMaterials();
     }
 
     void StartVibration()

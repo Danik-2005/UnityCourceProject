@@ -20,9 +20,9 @@ public class MidiPlayer : MonoBehaviour
             StopPlayback();
         }
 
-        if (GuitarSoundSystem.Instance == null)
+        if (GuitarStringsManager.Instance == null)
         {
-            Debug.LogError("GuitarSoundSystem not found!");
+            Debug.LogError("GuitarStringsManager not found!");
             return;
         }
 
@@ -38,8 +38,8 @@ public class MidiPlayer : MonoBehaviour
             float noteStartTime = (float)metricTime.TotalSeconds / bpmMultiplier;
             float noteDuration = (float)metricLength.TotalSeconds / bpmMultiplier;
 
-            // Используем новый метод из GuitarSoundSystem для поиска струны и лада
-            var (stringNumber, fretNumber) = GuitarSoundSystem.Instance.FindBestStringAndFret(note.NoteNumber);
+            // Используем новый метод из GuitarStringsManager для поиска струны и лада
+            var (stringNumber, fretNumber) = GuitarStringsManager.Instance.FindBestStringAndFret(note.NoteNumber);
             if (stringNumber != -1)
             {
                 var coroutine = StartCoroutine(PlayNoteWithTiming(noteStartTime, noteDuration, stringNumber, fretNumber));
@@ -60,10 +60,10 @@ public class MidiPlayer : MonoBehaviour
     private IEnumerator PlayNoteWithTiming(float startTime, float duration, int stringNumber, int fretNumber)
     {
         yield return new WaitForSeconds(startTime);
-        GuitarSoundSystem.Instance.PlayNote(stringNumber, fretNumber);
+        GuitarStringsManager.Instance.PlayNoteWithVisuals(stringNumber, fretNumber);
         
         yield return new WaitForSeconds(duration);
-        GuitarSoundSystem.Instance.StopNote(stringNumber, fretNumber);
+        GuitarStringsManager.Instance.StopNoteWithVisuals(stringNumber, fretNumber);
     }
 
     public void StopPlayback()
@@ -79,9 +79,9 @@ public class MidiPlayer : MonoBehaviour
         }
         activeCoroutines.Clear();
 
-        if (GuitarSoundSystem.Instance != null)
+        if (GuitarStringsManager.Instance != null)
         {
-            GuitarSoundSystem.Instance.StopAllNotes(true);
+            GuitarStringsManager.Instance.StopAllStrings();
         }
     }
 }
