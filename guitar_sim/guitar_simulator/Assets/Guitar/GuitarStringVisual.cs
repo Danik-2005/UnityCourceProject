@@ -31,7 +31,6 @@ public class GuitarStringVisual : MonoBehaviour
     private float stringLength;
     private Vector3 stringDirection;
     private int currentHighlightedFret = -1;
-    private List<Vector3> segmentStartPositions = new List<Vector3>();
     private float currentVibrationAmplitude;
     private Dictionary<int, int> activeNotes = new Dictionary<int, int>(); // fret -> count
 
@@ -43,13 +42,52 @@ public class GuitarStringVisual : MonoBehaviour
             return;
         }
 
-        // Вычисляем длину и направление струны
+        UpdateStringProperties();
+        CreateStringSegments();
+        CreateFretColliders();
+    }
+
+    void UpdateStringProperties()
+    {
+        // Обновляем длину и направление струны
         stringLength = Vector3.Distance(startPoint.position, endPoint.position);
         stringDirection = (endPoint.position - startPoint.position).normalized;
         currentVibrationAmplitude = vibrationAmplitude;
+    }
 
-        CreateStringSegments();
-        CreateFretColliders();
+    void LateUpdate()
+    {
+        // Обновляем позиции сегментов струны каждый кадр
+        if (!isVibrating)
+        {
+            UpdateStringSegments();
+        }
+    }
+
+    void UpdateStringSegments()
+    {
+        UpdateStringProperties();
+
+        // Обновляем позиции всех сегментов
+        for (int fret = 0; fret <= numberOfFrets; fret++)
+        {
+            float startPos = CalculateFretPosition(fret);
+            float endPos = CalculateFretPosition(fret + 1);
+            float segmentLength = endPos - startPos;
+
+            if (fret < stringSegments.Count)
+            {
+                GameObject segment = stringSegments[fret];
+                
+                // Обновляем позицию и поворот сегмента
+                Vector3 segmentPosition = startPoint.position + stringDirection * (startPos + segmentLength / 2f);
+                segment.transform.position = segmentPosition;
+                segment.transform.rotation = Quaternion.FromToRotation(Vector3.up, stringDirection);
+            }
+        }
+
+        // Обновляем позиции коллайдеров
+        UpdateFretColliders();
     }
 
     void CreateStringSegments()
@@ -72,9 +110,6 @@ public class GuitarStringVisual : MonoBehaviour
             Vector3 segmentPosition = startPoint.position + stringDirection * (startPos + segmentLength / 2f);
             segment.transform.position = segmentPosition;
             segment.transform.rotation = Quaternion.FromToRotation(Vector3.up, stringDirection);
-
-            // Сохраняем начальную позицию
-            segmentStartPositions.Add(segmentPosition);
 
             // Применяем материал
             var renderer = segment.GetComponent<Renderer>();
@@ -118,6 +153,24 @@ public class GuitarStringVisual : MonoBehaviour
             trigger.parentString = this;
             
             fretColliders.Add(fretCollider);
+        }
+    }
+
+    void UpdateFretColliders()
+    {
+        for (int fret = 0; fret <= numberOfFrets; fret++)
+        {
+            if (fret < fretColliders.Count)
+            {
+                float fretPosition = CalculateFretPosition(fret);
+                float nextFretPosition = CalculateFretPosition(fret + 1);
+                float fretLength = nextFretPosition - fretPosition;
+
+                GameObject fretCollider = fretColliders[fret];
+                Vector3 fretCenter = startPoint.position + stringDirection * (fretPosition + fretLength/2f);
+                fretCollider.transform.position = fretCenter;
+                fretCollider.transform.rotation = Quaternion.FromToRotation(Vector3.forward, stringDirection);
+            }
         }
     }
 
@@ -284,19 +337,23 @@ public class GuitarStringVisual : MonoBehaviour
                 float normalizedPos = (float)i / (stringSegments.Count - 1);
                 float amplitudeMod = 4f * normalizedPos * (1f - normalizedPos); // Параболическая функция
                 float finalOffset = offset * amplitudeMod;
+
+                // Получаем базовую позицию сегмента
+                float startPos = CalculateFretPosition(i);
+                float endPos = CalculateFretPosition(i + 1);
+                float segmentLength = endPos - startPos;
+                Vector3 basePosition = startPoint.position + stringDirection * (startPos + segmentLength / 2f);
                 
-                stringSegments[i].transform.position = segmentStartPositions[i] + rightDirection * finalOffset;
+                // Применяем смещение
+                stringSegments[i].transform.position = basePosition + rightDirection * finalOffset;
             }
             
             elapsed += Time.deltaTime;
             yield return null;
         }
         
-        // Возвращаем сегменты в исходное положение
-        for (int i = 0; i < stringSegments.Count; i++)
-        {
-            stringSegments[i].transform.position = segmentStartPositions[i];
-        }
+        // Возвращаем сегменты в правильные позиции
+        UpdateStringSegments();
         
         isVibrating = false;
         currentVibrationAmplitude = vibrationAmplitude;

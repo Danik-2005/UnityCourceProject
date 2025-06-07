@@ -216,6 +216,7 @@ public class TremoloController : MonoBehaviour
         }
     }
 
+/*
     private void OnDrawGizmos()
     {
         // Всегда отображаем коллайдер тремоло
@@ -238,4 +239,5 @@ public class TremoloController : MonoBehaviour
             }
         }
     }
+*/
 } 

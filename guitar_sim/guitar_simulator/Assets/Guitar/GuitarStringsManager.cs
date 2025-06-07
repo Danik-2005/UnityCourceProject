@@ -17,6 +17,7 @@ public class GuitarStringsManager : MonoBehaviour
     [Header("String References")]
     public Transform[] stringStartPoints; // Массив из 6 точек начала струн
     public Transform[] stringEndPoints;   // Массив из 6 точек конца струн
+    public Transform[] stringParents;     // Родительские объекты для струн (str1-str6)
 
     [Header("String Properties")]
     [Tooltip("Размеры струн от 1-й (самой тонкой) до 6-й (самой толстой)")]
@@ -72,6 +73,12 @@ public class GuitarStringsManager : MonoBehaviour
             return;
         }
 
+        if (stringParents == null || stringParents.Length != 6)
+        {
+            Debug.LogError("Please assign all string parent objects (str1-str6)!");
+            return;
+        }
+
         CreateAllStrings();
     }
 
@@ -81,7 +88,11 @@ public class GuitarStringsManager : MonoBehaviour
         for (int i = 0; i < 6; i++)
         {
             GameObject stringObj = new GameObject($"String_{i + 1}");
-            stringObj.transform.parent = transform;
+            
+            // Устанавливаем родителя из массива stringParents
+            stringObj.transform.parent = stringParents[i];
+            stringObj.transform.localPosition = Vector3.zero;
+            stringObj.transform.localRotation = Quaternion.identity;
             
             // Добавляем компонент струны
             GuitarStringVisual stringVisual = stringObj.AddComponent<GuitarStringVisual>();
