@@ -121,7 +121,6 @@ public class GuitarKnobsController : MonoBehaviour
             if (!guitarMixer.SetFloat(pitchParameter, currentPitch))
                 Debug.LogError($"Failed to set {pitchParameter}");
 
-            Debug.Log($"Updated mixer - Vol: {volumeDb:F1}dB, Tone: {toneFreq:F0}Hz, Bass: {bassFreq:F0}Hz, Pitch: {currentPitch:F2}");
         }
         catch (System.Exception e)
         {
