@@ -747,6 +747,37 @@ RectTransform:
   m_AnchoredPosition: {x: 218, y: -172}
   m_SizeDelta: {x: 380, y: 287.8}
   m_Pivot: {x: 0.5, y: 0.5}
+--- !u!1 &300319296
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 300319297}
+  m_Layer: 0
+  m_Name: TremoloController
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &300319297
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 300319296}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -8.299443, y: -7.8457723, z: 11.599428}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &305897120
 GameObject:
   m_ObjectHideFlags: 0
@@ -4522,18 +4553,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9d270727585dce543be290a556956c9c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  guitarEffects: {fileID: 0}
-  audioSource: {fileID: 0}
-  testSound: {fileID: 8300000, guid: 487b5cb5ba137264ba7c0f947c3f51a3, type: 3}
-  testDuration: 1
-  pitchValues:
-  - 0.5
-  - 0.75
-  - 1
-  - 1.5
-  - 2
-  button: {fileID: 0}
-  isPlaying: 0
 --- !u!114 &1693458020
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4546,11 +4565,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 743a403800f2dda40b7612fb04f2958e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  stringNumber: 1
-  fretNumber: 0
-  stringInput: {fileID: 1406106751}
-  fretInput: {fileID: 1462169964}
-  playButton: {fileID: 1693458016}
 --- !u!1 &1693722003
 GameObject:
   m_ObjectHideFlags: 0
@@ -14220,10 +14234,15 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   knobsController: {fileID: 825391900}
   tremoloArm: {fileID: 3556971993127535170}
+  tremoloBridge: {fileID: 0}
+  tremoloArmCollider: {fileID: 0}
   maxRotationAngle: 15
+  maxBridgeAngle: 0.3
   tremoloSpeed: 8
   returnSpeed: 10
   pitchRange: 0.2
+  mouseSensitivity: 1
+  invertMouseY: 0
 --- !u!1 &6107448621403578089
 GameObject:
   m_ObjectHideFlags: 0
@@ -18341,3 +18360,4 @@ SceneRoots:
   - {fileID: 948505006}
   - {fileID: 1175423605}
   - {fileID: 543450653184049300}
+  - {fileID: 300319297}

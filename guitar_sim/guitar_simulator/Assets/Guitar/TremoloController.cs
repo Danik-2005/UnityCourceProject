@@ -4,18 +4,32 @@ public class TremoloController : MonoBehaviour
 {
     [Header("References")]
     public GuitarKnobsController knobsController;
-    public Transform tremoloArm;  // Рычаг тремоло
+    public Transform tremoloArm;      // Рычаг тремоло
+    public Collider tremoloArmCollider; // Коллайдер рычага тремоло
 
     [Header("Tremolo Settings")]
-    public float maxRotationAngle = 15f;   // Максимальный угол наклона рычага
+    [Range(0.1f, 5f)]
+    public float maxRotationAngle = 5f;   // Максимальный угол наклона рычага
+    [Range(1f, 20f)]
     public float tremoloSpeed = 8f;        // Скорость движения тремоло
+    [Range(5f, 20f)]
     public float returnSpeed = 10f;        // Скорость возврата в исходное положение
+    [Range(0.1f, 1f)]
     public float pitchRange = 0.2f;        // Диапазон изменения питча (±0.2 от нормального)
+    
+    [Header("Mouse Control")]
+    [Range(0.1f, 5f)]
+    public float mouseSensitivity = 1f;    // Чувствительность мыши
+    public bool invertMouseY = false;      // Инвертировать ось Y мыши
 
     private float initialRotationX;
     private float currentRotation = 0f;
+    private float targetRotation = 0f;
     private bool isTremoloActive = false;
+    private bool isMouseControlActive = false;
     private float tremoloTime = 0f;
+    private Vector3 lastMousePosition;
+    private bool isDragging = false;
 
     private void Start()
     {
@@ -35,50 +49,114 @@ public class TremoloController : MonoBehaviour
             }
         }
 
+        // Если коллайдер не назначен, пытаемся найти его на рычаге
+        if (tremoloArmCollider == null && tremoloArm != null)
+        {
+            tremoloArmCollider = tremoloArm.GetComponent<Collider>();
+            if (tremoloArmCollider == null)
+            {
+                Debug.LogWarning("No collider found on tremolo arm! Adding BoxCollider...");
+                tremoloArmCollider = tremoloArm.gameObject.AddComponent<BoxCollider>();
+            }
+        }
+
+        // Сохраняем начальный угол поворота
         initialRotationX = tremoloArm.localRotation.eulerAngles.x;
     }
 
     private void Update()
     {
-        if (isTremoloActive)
-        {
-            // Обновляем время для синусоидального движения
-            tremoloTime += Time.deltaTime * tremoloSpeed;
-            
-            // Создаем колебательное движение
-            currentRotation = Mathf.Sin(tremoloTime) * maxRotationAngle;
-            
-            // Применяем поворот к рычагу
-            ApplyRotation();
+        // Обработка нажатий мыши
+        HandleMouseInput();
 
-            // Вычисляем и применяем питч
-            float normalizedRotation = currentRotation / maxRotationAngle; // -1 to 1
-            float pitchValue = 1f + (normalizedRotation * pitchRange);    // Изменяем питч относительно 1
-            knobsController.SetPitch(pitchValue);
+        if (isMouseControlActive)
+        {
+            HandleMouseControl();
         }
-        else if (currentRotation != 0f)
+        else if (isTremoloActive)
         {
-            // Плавно возвращаем рычаг в исходное положение
-            currentRotation = Mathf.MoveTowards(currentRotation, 0f, returnSpeed * Time.deltaTime);
-            
-            // Применяем поворот
-            ApplyRotation();
+            HandleTremoloEffect();
+        }
+        else
+        {
+            HandleReturnToRest();
+        }
 
-            // Возвращаем питч к нормальному значению
-            float normalizedRotation = currentRotation / maxRotationAngle;
-            float pitchValue = 1f + (normalizedRotation * pitchRange);
-            knobsController.SetPitch(pitchValue);
+        // Применяем поворот и обновляем питч
+        ApplyRotationAndPitch();
+    }
 
-            // Если вернулись в исходное положение, сбрасываем питч точно на 1
-            if (Mathf.Approximately(currentRotation, 0f))
+    private void HandleMouseInput()
+    {
+        if (Input.GetMouseButtonDown(0))
+        {
+            Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+            RaycastHit hit;
+
+            // Визуализируем луч для отладки
+            Debug.DrawRay(ray.origin, ray.direction * 100f, Color.red, 1f);
+
+            if (tremoloArmCollider != null && Physics.Raycast(ray, out hit))
             {
-                knobsController.SetPitch(1f);
+                Debug.Log($"Hit object: {hit.collider.gameObject.name}");
+                if (hit.collider == tremoloArmCollider)
+                {
+                    isDragging = true;
+                    StartMouseControl();
+                    Debug.Log("Started tremolo control");
+                }
             }
+        }
+        else if (Input.GetMouseButtonUp(0) && isDragging)
+        {
+            isDragging = false;
+            StopMouseControl();
+            Debug.Log("Stopped tremolo control");
         }
     }
 
-    private void ApplyRotation()
+    private void HandleMouseControl()
     {
+        if (!isDragging) return;
+
+        Vector3 mouseDelta = Input.mousePosition - lastMousePosition;
+        float mouseY = invertMouseY ? -mouseDelta.y : mouseDelta.y;
+        
+        // Преобразуем движение мыши в изменение угла
+        targetRotation = Mathf.Clamp(
+            targetRotation - mouseY * mouseSensitivity * Time.deltaTime,
+            -maxRotationAngle,
+            maxRotationAngle
+        );
+
+        // Плавно переходим к целевому углу
+        currentRotation = Mathf.Lerp(currentRotation, targetRotation, tremoloSpeed * Time.deltaTime);
+        
+        lastMousePosition = Input.mousePosition;
+    }
+
+    private void HandleTremoloEffect()
+    {
+        // Обновляем время для синусоидального движения
+        tremoloTime += Time.deltaTime * tremoloSpeed;
+        
+        // Создаем колебательное движение
+        currentRotation = Mathf.Sin(tremoloTime) * maxRotationAngle;
+    }
+
+    private void HandleReturnToRest()
+    {
+        if (!Mathf.Approximately(currentRotation, 0f))
+        {
+            // Плавно возвращаем рычаг в исходное положение
+            currentRotation = Mathf.MoveTowards(currentRotation, 0f, returnSpeed * Time.deltaTime);
+            targetRotation = 0f;
+        }
+    }
+
+    private void ApplyRotationAndPitch()
+    {
+        // Применяем поворот к рычагу тремоло
         if (tremoloArm != null)
         {
             Vector3 currentEuler = tremoloArm.localRotation.eulerAngles;
@@ -88,18 +166,43 @@ public class TremoloController : MonoBehaviour
                 currentEuler.z
             );
         }
+
+        // Вычисляем и применяем питч
+        float normalizedRotation = currentRotation / maxRotationAngle; // -1 to 1
+        float pitchValue = 1f + (normalizedRotation * pitchRange);
+        knobsController.SetPitch(pitchValue);
+
+        // Если вернулись в исходное положение, сбрасываем питч точно на 1
+        if (Mathf.Approximately(currentRotation, 0f) && !isTremoloActive && !isMouseControlActive)
+        {
+            knobsController.SetPitch(1f);
+        }
     }
 
     // Публичные методы для управления тремоло
     public void StartTremolo()
     {
         isTremoloActive = true;
+        isMouseControlActive = false;
         tremoloTime = 0f;
     }
 
     public void StopTremolo()
     {
         isTremoloActive = false;
+    }
+
+    public void StartMouseControl()
+    {
+        isMouseControlActive = true;
+        isTremoloActive = false;
+        lastMousePosition = Input.mousePosition;
+        targetRotation = currentRotation;
+    }
+
+    public void StopMouseControl()
+    {
+        isMouseControlActive = false;
     }
 
     // Визуализация для отладки
@@ -110,6 +213,29 @@ public class TremoloController : MonoBehaviour
             Gizmos.color = Color.yellow;
             Gizmos.DrawLine(tremoloArm.position, 
                           tremoloArm.position + tremoloArm.up * 0.2f);
+        }
+    }
+
+    private void OnDrawGizmos()
+    {
+        // Всегда отображаем коллайдер тремоло
+        if (tremoloArmCollider != null)
+        {
+            Gizmos.color = isDragging ? Color.green : Color.yellow;
+            
+            if (tremoloArmCollider is BoxCollider boxCollider)
+            {
+                // Отображаем границы BoxCollider
+                Matrix4x4 oldMatrix = Gizmos.matrix;
+                Gizmos.matrix = tremoloArmCollider.transform.localToWorldMatrix;
+                Gizmos.DrawWireCube(boxCollider.center, boxCollider.size);
+                Gizmos.matrix = oldMatrix;
+            }
+            else if (tremoloArmCollider is MeshCollider)
+            {
+                // Для MeshCollider просто показываем точку
+                Gizmos.DrawWireSphere(tremoloArmCollider.bounds.center, 0.02f);
+            }
         }
     }
 } 
