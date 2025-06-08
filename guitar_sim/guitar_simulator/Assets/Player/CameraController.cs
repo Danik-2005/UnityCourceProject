@@ -11,9 +11,15 @@ public class CameraController : MonoBehaviour
     [SerializeField] private float minVerticalAngle = -30f;
     [SerializeField] private float maxVerticalAngle = 60f;
 
+    [Header("Crouch Settings")]
+    [SerializeField] private float crouchHeight = 0.7f;    // Насколько низко опускается камера при приседании
+    [SerializeField] private float crouchSpeed = 10f;      // Скорость приседания/вставания
+
     private float rotationX = 0f;
     private float rotationY = 0f;
     private bool isControlling = false;
+    private float defaultHeight;                           // Изначальная высота камеры
+    private float targetHeight;                            // Целевая высота для плавного перехода
 
     private void Start()
     {
@@ -21,6 +27,10 @@ public class CameraController : MonoBehaviour
         Vector3 angles = transform.eulerAngles;
         rotationX = angles.y;
         rotationY = angles.x;
+
+        // Сохраняем начальную высоту камеры
+        defaultHeight = transform.position.y;
+        targetHeight = defaultHeight;
     }
 
     private void Update()
@@ -45,6 +55,9 @@ public class CameraController : MonoBehaviour
             HandleRotation();
             HandleMovement();
         }
+
+        // Обрабатываем приседание независимо от управления камерой
+        HandleCrouching();
     }
 
     private void HandleRotation()
@@ -70,6 +83,19 @@ public class CameraController : MonoBehaviour
         moveDirection = moveDirection.normalized;
 
         // Перемещаем камеру
-        transform.position += moveDirection * moveSpeed * Time.deltaTime;
+        Vector3 newPosition = transform.position + moveDirection * moveSpeed * Time.deltaTime;
+        newPosition.y = transform.position.y; // Сохраняем текущую высоту (важно для приседания)
+        transform.position = newPosition;
+    }
+
+    private void HandleCrouching()
+    {
+        // Определяем целевую высоту в зависимости от нажатия Ctrl
+        targetHeight = Input.GetKey(KeyCode.LeftControl) ? defaultHeight - crouchHeight : defaultHeight;
+
+        // Плавно меняем текущую высоту
+        Vector3 currentPos = transform.position;
+        currentPos.y = Mathf.Lerp(currentPos.y, targetHeight, Time.deltaTime * crouchSpeed);
+        transform.position = currentPos;
     }
 } 
