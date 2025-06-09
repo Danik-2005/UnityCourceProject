@@ -19,7 +19,7 @@ public class GuitarStringVisual : MonoBehaviour
     public int numberOfFrets = 22;
     
     [Header("Animation")]
-    public float vibrationAmplitude = 0.001f;
+    public float vibrationAmplitude = 0.01f;
     public float vibrationSpeed = 30f;
     public float vibrationDuration = 0.5f;
     public float dampingSpeed = 0.95f; // Скорость затухания при повторных нажатиях
@@ -322,7 +322,6 @@ public class GuitarStringVisual : MonoBehaviour
     {
         isVibrating = true;
         float elapsed = 0f;
-        Vector3 rightDirection = Vector3.Cross(stringDirection, Vector3.up).normalized;
         float startingAmplitude = currentVibrationAmplitude;
         
         while (currentVibrationAmplitude > vibrationAmplitude * 0.01f)
@@ -332,6 +331,16 @@ public class GuitarStringVisual : MonoBehaviour
             
             float offset = Mathf.Sin(elapsed * vibrationSpeed) * currentVibrationAmplitude;
             
+            // Получаем актуальное направление струны и перпендикулярное направление для вибрации
+            Vector3 currentStringDirection = (endPoint.position - startPoint.position).normalized;
+            Vector3 rightDirection = Vector3.Cross(currentStringDirection, Vector3.up).normalized;
+            
+            // Если rightDirection слишком мал (струна вертикальная), используем альтернативное направление
+            if (rightDirection.magnitude < 0.1f)
+            {
+                rightDirection = Vector3.Cross(currentStringDirection, Vector3.forward).normalized;
+            }
+            
             for (int i = 0; i < stringSegments.Count; i++)
             {
                 // Применяем параболическое смещение (максимум в середине струны)
@@ -339,13 +348,13 @@ public class GuitarStringVisual : MonoBehaviour
                 float amplitudeMod = 4f * normalizedPos * (1f - normalizedPos); // Параболическая функция
                 float finalOffset = offset * amplitudeMod;
 
-                // Получаем базовую позицию сегмента
+                // Получаем базовую позицию сегмента относительно актуального положения гитары
                 float startPos = CalculateFretPosition(i);
                 float endPos = CalculateFretPosition(i + 1);
                 float segmentLength = endPos - startPos;
-                Vector3 basePosition = startPoint.position + stringDirection * (startPos + segmentLength / 2f);
+                Vector3 basePosition = startPoint.position + currentStringDirection * (startPos + segmentLength / 2f);
                 
-                // Применяем смещение
+                // Применяем смещение относительно актуального направления
                 stringSegments[i].transform.position = basePosition + rightDirection * finalOffset;
             }
             
