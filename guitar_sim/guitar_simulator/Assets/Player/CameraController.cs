@@ -20,41 +20,58 @@ public class CameraController : MonoBehaviour
     private bool isControlling = false;
     private float defaultHeight;                           // Изначальная высота камеры
     private float targetHeight;                            // Целевая высота для плавного перехода
+    private Transform playerTransform;                     // Ссылка на объект player
 
     private void Start()
     {
-        // Сохраняем начальный поворот
-        Vector3 angles = transform.eulerAngles;
+        // Находим объект player (родитель камеры)
+        playerTransform = transform.parent;
+        if (playerTransform == null)
+        {
+            Debug.LogError("CameraController: Камера должна быть дочерней к объекту Player!");
+            return;
+        }
+
+        Debug.Log("CameraController: Player найден - " + playerTransform.name);
+
+        // Сохраняем начальный поворот камеры
+        Vector3 angles = transform.localEulerAngles;
         rotationX = angles.y;
         rotationY = angles.x;
 
         // Сохраняем начальную высоту камеры
-        defaultHeight = transform.position.y;
+        defaultHeight = transform.localPosition.y;
         targetHeight = defaultHeight;
+        
+        Debug.Log("CameraController: Начальная высота камеры - " + defaultHeight);
     }
 
     private void Update()
     {
-        // Проверяем нажатие средней кнопки мыши
+        // Проверяем нажатие средней кнопки мыши для управления камерой
         if (Input.GetMouseButtonDown(2)) // 2 = средняя кнопка (колесо)
         {
             isControlling = true;
             Cursor.visible = false;
             Cursor.lockState = CursorLockMode.Locked;
+            Debug.Log("CameraController: Управление включено");
         }
         else if (Input.GetMouseButtonUp(2))
         {
             isControlling = false;
             Cursor.visible = true;
             Cursor.lockState = CursorLockMode.None;
+            Debug.Log("CameraController: Управление выключено");
         }
 
-        // Управляем камерой только при зажатой средней кнопке
+        // Вращение камеры только при зажатой средней кнопке
         if (isControlling)
         {
             HandleRotation();
-            HandleMovement();
         }
+
+        // Движение работает всегда
+        HandleMovement();
 
         // Обрабатываем приседание независимо от управления камерой
         HandleCrouching();
@@ -68,24 +85,38 @@ public class CameraController : MonoBehaviour
         rotationX += mouseX;
         rotationY = Mathf.Clamp(rotationY + mouseY, minVerticalAngle, maxVerticalAngle);
 
-        transform.rotation = Quaternion.Euler(rotationY, rotationX, 0);
+        // Горизонтальный поворот (влево-вправо) - поворачиваем весь объект Player
+        if (playerTransform != null)
+        {
+            playerTransform.rotation = Quaternion.Euler(0, rotationX, 0);
+        }
+        
+        // Вертикальный поворот (вверх-вниз) - поворачиваем только камеру
+        transform.localRotation = Quaternion.Euler(rotationY, 0, 0);
     }
 
     private void HandleMovement()
     {
+        if (playerTransform == null) 
+        {
+            Debug.LogWarning("CameraController: Player не найден!");
+            return;
+        }
+
         // Получаем ввод с клавиатуры
         float horizontal = Input.GetAxis("Horizontal"); // A/D
         float vertical = Input.GetAxis("Vertical");     // W/S
 
         // Создаем вектор движения в локальных координатах камеры
         Vector3 moveDirection = transform.right * horizontal + transform.forward * vertical;
-        moveDirection.y = 0; // Убираем вертикальное движение, чтобы камера двигалась только в горизонтальной плоскости
+        moveDirection.y = 0; // Убираем вертикальное движение, чтобы player двигался только в горизонтальной плоскости
         moveDirection = moveDirection.normalized;
 
-        // Перемещаем камеру
-        Vector3 newPosition = transform.position + moveDirection * moveSpeed * Time.deltaTime;
-        newPosition.y = transform.position.y; // Сохраняем текущую высоту (важно для приседания)
-        transform.position = newPosition;
+        // Перемещаем объект player, а не камеру
+        Vector3 newPosition = playerTransform.position + moveDirection * moveSpeed * Time.deltaTime;
+        newPosition.y = playerTransform.position.y; // Сохраняем текущую высоту player
+        
+        playerTransform.position = newPosition;
     }
 
     private void HandleCrouching()
@@ -93,9 +124,9 @@ public class CameraController : MonoBehaviour
         // Определяем целевую высоту в зависимости от нажатия Ctrl
         targetHeight = Input.GetKey(KeyCode.LeftControl) ? defaultHeight - crouchHeight : defaultHeight;
 
-        // Плавно меняем текущую высоту
-        Vector3 currentPos = transform.position;
+        // Плавно меняем текущую высоту камеры
+        Vector3 currentPos = transform.localPosition;
         currentPos.y = Mathf.Lerp(currentPos.y, targetHeight, Time.deltaTime * crouchSpeed);
-        transform.position = currentPos;
+        transform.localPosition = currentPos;
     }
 } 
