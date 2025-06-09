@@ -114,6 +114,7 @@ public class GuitarStringVisual : MonoBehaviour
             // Применяем материал
             var renderer = segment.GetComponent<Renderer>();
             renderer.material = stringMaterial;
+            renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off; // Отключаем отбрасывание теней
 
             // Удаляем коллайдер
             Destroy(segment.GetComponent<Collider>());
