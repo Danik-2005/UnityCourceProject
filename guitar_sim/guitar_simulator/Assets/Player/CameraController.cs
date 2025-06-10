@@ -32,8 +32,6 @@ public class CameraController : MonoBehaviour
             return;
         }
 
-        Debug.Log("CameraController: Player найден - " + playerTransform.name);
-
         // Сохраняем начальный поворот камеры
         Vector3 angles = transform.localEulerAngles;
         rotationX = angles.y;
@@ -42,8 +40,6 @@ public class CameraController : MonoBehaviour
         // Сохраняем начальную высоту камеры
         defaultHeight = transform.localPosition.y;
         targetHeight = defaultHeight;
-        
-        Debug.Log("CameraController: Начальная высота камеры - " + defaultHeight);
     }
 
     private void Update()
@@ -54,14 +50,12 @@ public class CameraController : MonoBehaviour
             isControlling = true;
             Cursor.visible = false;
             Cursor.lockState = CursorLockMode.Locked;
-            Debug.Log("CameraController: Управление включено");
         }
         else if (Input.GetMouseButtonUp(2))
         {
             isControlling = false;
             Cursor.visible = true;
             Cursor.lockState = CursorLockMode.None;
-            Debug.Log("CameraController: Управление выключено");
         }
 
         // Вращение камеры только при зажатой средней кнопке

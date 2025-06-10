@@ -111,18 +111,4 @@ public class BGMusicPlayer : MonoBehaviour
     {
         return audioSource.isPlaying && !isPaused;
     }
-
-    // Для теста: клавиши управления
-    void OnGUI()
-    {
-        GUILayout.BeginArea(new Rect(10, 10, 200, 120));
-        GUILayout.Label($"BG Music: {(IsPlaying() ? "Playing" : (isPaused ? "Paused" : "Stopped"))}");
-        if (GUILayout.Button("Pause")) PauseMusic();
-        if (GUILayout.Button("Resume")) ResumeMusic();
-        if (GUILayout.Button("Next Track")) NextTrack();
-        GUILayout.Label($"Volume: {musicVolume:F2}");
-        float newVol = GUILayout.HorizontalSlider(musicVolume, 0f, 1f);
-        if (Mathf.Abs(newVol - musicVolume) > 0.001f) SetMusicVolume(newVol);
-        GUILayout.EndArea();
-    }
 } 

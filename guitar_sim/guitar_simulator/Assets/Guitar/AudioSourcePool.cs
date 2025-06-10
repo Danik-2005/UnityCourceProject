@@ -36,8 +36,6 @@ public class AudioSourcePool : MonoBehaviour
             ConfigureAudioSource(source);
             inactiveSources.Enqueue(source);
         }
-
-        Debug.Log($"AudioSourcePool initialized with {poolSize} sources");
     }
 
     private void Update()
@@ -58,7 +56,6 @@ public class AudioSourcePool : MonoBehaviour
         source.outputAudioMixerGroup = guitarMixerGroup;
         source.spatialBlend = 0f; // Делаем звук 2D для лучшей слышимости эффектов
         source.gameObject.SetActive(false);
-        Debug.Log($"Configured AudioSource: {source.name} with mixer group: {guitarMixerGroup.name}");
     }
 
     public AudioSource GetSource()
@@ -90,7 +87,6 @@ public class AudioSourcePool : MonoBehaviour
         if (source.outputAudioMixerGroup != guitarMixerGroup)
         {
             source.outputAudioMixerGroup = guitarMixerGroup;
-            Debug.Log($"Restored mixer group for source: {source.name}");
         }
         
         activeSources.Add(source);
@@ -130,7 +126,6 @@ public class AudioSourcePool : MonoBehaviour
             if (source != null && source.outputAudioMixerGroup != guitarMixerGroup)
             {
                 source.outputAudioMixerGroup = guitarMixerGroup;
-                Debug.Log($"Fixed mixer group for source: {source.name}");
             }
         }
     }

@@ -73,9 +73,7 @@ public class GuitarKnobsController : MonoBehaviour
 
         parametersVerified = volumeExists && toneExists && bassExists && pitchExists;
         
-        if (parametersVerified)
-            Debug.Log("All AudioMixer parameters verified successfully!");
-        else
+        if (!parametersVerified)
             Debug.LogError("Some AudioMixer parameters are missing! Check if they are exposed in the AudioMixer.");
     }
 
@@ -88,12 +86,6 @@ public class GuitarKnobsController : MonoBehaviour
         guitarMixer.GetFloat(toneParameter, out currentTone);
         guitarMixer.GetFloat(bassParameter, out currentBass);
         guitarMixer.GetFloat(pitchParameter, out currentPitchValue);
-
-        Debug.Log($"Current Mixer Values:\n" +
-                 $"Volume: {currentVolume:F1}dB\n" +
-                 $"Tone LPF: {currentTone:F0}Hz\n" +
-                 $"Bass HPF: {currentBass:F0}Hz\n" +
-                 $"Pitch: {currentPitchValue:F2}");
     }
 
     public void UpdateAllParameters()

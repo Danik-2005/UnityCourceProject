@@ -44,13 +44,11 @@ public class GuitarKnob : MonoBehaviour, IPointerEnterHandler, IPointerExitHandl
     public void OnPointerEnter(PointerEventData eventData)
     {
         isMouseOver = true;
-        Debug.Log($"Mouse over {gameObject.name} ({knobType})");
     }
 
     public void OnPointerExit(PointerEventData eventData)
     {
         isMouseOver = false;
-        Debug.Log($"Mouse exit {gameObject.name} ({knobType})");
     }
 
     private void Update()
@@ -71,8 +69,6 @@ public class GuitarKnob : MonoBehaviour, IPointerEnterHandler, IPointerExitHandl
                 
                 // Обновляем поворот крутилки
                 UpdateRotation(newValue);
-
-                Debug.Log($"Knob {knobType} value changed to: {newValue:F2}");
             }
         }
     }

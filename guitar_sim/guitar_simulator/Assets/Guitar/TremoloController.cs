@@ -98,12 +98,10 @@ public class TremoloController : MonoBehaviour
 
             if (tremoloArmCollider != null && Physics.Raycast(ray, out hit))
             {
-                Debug.Log($"Hit object: {hit.collider.gameObject.name}");
                 if (hit.collider == tremoloArmCollider)
                 {
                     isDragging = true;
                     StartMouseControl();
-                    Debug.Log("Started tremolo control");
                 }
             }
         }
@@ -111,7 +109,6 @@ public class TremoloController : MonoBehaviour
         {
             isDragging = false;
             StopMouseControl();
-            Debug.Log("Stopped tremolo control");
         }
     }
 
@@ -204,40 +201,4 @@ public class TremoloController : MonoBehaviour
     {
         isMouseControlActive = false;
     }
-
-    // Визуализация для отладки
-    private void OnDrawGizmosSelected()
-    {
-        if (tremoloArm != null)
-        {
-            Gizmos.color = Color.yellow;
-            Gizmos.DrawLine(tremoloArm.position, 
-                          tremoloArm.position + tremoloArm.up * 0.2f);
-        }
-    }
-
-/*
-    private void OnDrawGizmos()
-    {
-        // Всегда отображаем коллайдер тремоло
-        if (tremoloArmCollider != null)
-        {
-            Gizmos.color = isDragging ? Color.green : Color.yellow;
-            
-            if (tremoloArmCollider is BoxCollider boxCollider)
-            {
-                // Отображаем границы BoxCollider
-                Matrix4x4 oldMatrix = Gizmos.matrix;
-                Gizmos.matrix = tremoloArmCollider.transform.localToWorldMatrix;
-                Gizmos.DrawWireCube(boxCollider.center, boxCollider.size);
-                Gizmos.matrix = oldMatrix;
-            }
-            else if (tremoloArmCollider is MeshCollider)
-            {
-                // Для MeshCollider просто показываем точку
-                Gizmos.DrawWireSphere(tremoloArmCollider.bounds.center, 0.02f);
-            }
-        }
-    }
-*/
 } 

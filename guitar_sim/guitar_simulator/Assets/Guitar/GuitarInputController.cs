@@ -60,19 +60,16 @@ public class GuitarInputController : MonoBehaviour
         {
             isVolumeSelected = true;
             isToneSelected = isBassSelected = false;
-            Debug.Log("Volume knob selected");
         }
         else if (Input.GetKeyDown(toneKnobKey))
         {
             isToneSelected = true;
             isVolumeSelected = isBassSelected = false;
-            Debug.Log("Tone knob selected");
         }
         else if (Input.GetKeyDown(bassKnobKey))
         {
             isBassSelected = true;
             isVolumeSelected = isToneSelected = false;
-            Debug.Log("Bass knob selected");
         }
     }
 
@@ -114,18 +111,5 @@ public class GuitarInputController : MonoBehaviour
         {
             tremoloController.StopTremolo();
         }
-    }
-
-    private void OnGUI()
-    {
-        // Отображаем подсказки по управлению
-        GUILayout.BeginArea(new Rect(10, 10, 300, 100));
-        GUILayout.Label("Controls:");
-        GUILayout.Label($"1 - Select Volume Knob {(isVolumeSelected ? "(Selected)" : "")}");
-        GUILayout.Label($"2 - Select Tone Knob {(isToneSelected ? "(Selected)" : "")}");
-        GUILayout.Label($"3 - Select Bass Knob {(isBassSelected ? "(Selected)" : "")}");
-        GUILayout.Label("T - Tremolo");
-        GUILayout.Label("Mouse Wheel - Adjust selected knob");
-        GUILayout.EndArea();
     }
 } 

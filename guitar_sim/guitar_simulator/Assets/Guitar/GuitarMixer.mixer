@@ -50,6 +50,7 @@ AudioMixerGroupController:
   - {fileID: 1992622035212459678}
   - {fileID: -7901830103743992042}
   - {fileID: -4520515778889269788}
+  - {fileID: 4711908145444974674}
   m_UserColorIndex: 0
   m_Mute: 0
   m_Solo: 0
@@ -100,6 +101,8 @@ AudioMixerController:
     name: GuitarToneLPF
   - guid: ea0a1f5682970834ba19fea66028c3c0
     name: GuitarPitch
+  - guid: 993a2cc457bea044887a8c268da2bc5b
+    name: GuitarMute
   m_AudioMixerGroupViews:
   - guids:
     - 999941fa8b19161499553712e80c79d7
@@ -153,6 +156,7 @@ AudioMixerSnapshotController:
   m_FloatValues:
     fe9d891cd7c36874bb21a734dc074a60: 100
     9fde723c21b7d1f41bcc433e73a1cee1: 0.006548249
+    22a9c3dc1e674734196cbb2f075c7249: -10
     8cacb15edd850d346b59e707bbfc2909: 3092
   m_TransitionOverrides: {}
 --- !u!244 &1992622035212459678
@@ -184,6 +188,34 @@ AudioMixerEffectController:
   m_EffectName: Receive
   m_MixLevel: 1dc7e114dbd8e564ea0a931633cf99f6
   m_Parameters: []
+  m_SendTarget: {fileID: 0}
+  m_EnableWetMix: 0
+  m_Bypass: 0
+--- !u!244 &4711908145444974674
+AudioMixerEffectController:
+  m_ObjectHideFlags: 3
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: 
+  m_EffectID: dde7544efcf341c4a92f1917272639e3
+  m_EffectName: Duck Volume
+  m_MixLevel: 153e828df3997934684b8403ea201778
+  m_Parameters:
+  - m_ParameterName: Threshold
+    m_GUID: 22a9c3dc1e674734196cbb2f075c7249
+  - m_ParameterName: Ratio
+    m_GUID: 732891ae6e45c004b9c51e8daa3b4a6f
+  - m_ParameterName: Attack Time
+    m_GUID: 48d0943d363617343b76c2edb991a5ef
+  - m_ParameterName: Release Time
+    m_GUID: 7baa96a6d40f4974e934f8dfae6415c0
+  - m_ParameterName: Make-up Gain
+    m_GUID: e8c39272f787a9a4cb031324d8b2f795
+  - m_ParameterName: Knee
+    m_GUID: cc730ea7394beaa4081024e7d9767b40
+  - m_ParameterName: Sidechain Mix
+    m_GUID: a7190d0b5d01b854a9fdce265863a01b
   m_SendTarget: {fileID: 0}
   m_EnableWetMix: 0
   m_Bypass: 0

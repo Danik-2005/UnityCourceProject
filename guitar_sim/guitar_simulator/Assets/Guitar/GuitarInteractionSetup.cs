@@ -10,7 +10,6 @@ public class GuitarInteractionSetup : MonoBehaviour
         if (GetComponent<PhysicsRaycaster>() == null)
         {
             var raycaster = gameObject.AddComponent<PhysicsRaycaster>();
-            Debug.Log("Added PhysicsRaycaster to camera");
         }
 
         // Проверяем наличие EventSystem в сцене
@@ -19,7 +18,6 @@ public class GuitarInteractionSetup : MonoBehaviour
             var eventSystem = new GameObject("EventSystem");
             eventSystem.AddComponent<EventSystem>();
             eventSystem.AddComponent<StandaloneInputModule>();
-            Debug.Log("Created EventSystem");
         }
     }
 } 

@@ -17,15 +17,12 @@ public class NoteSampleBank : MonoBehaviour
 
     void LoadAllSamples()
     {
-        Debug.Log("Starting LoadAllSamples");
         var clips = Resources.LoadAll<AudioClip>("GuitarSamples");
-        Debug.Log($"Found {clips.Length} clips in Resources/GuitarSamples");
         
         Regex regex = new(@"([nmb])([1-6])_([0-9]+)");
 
         foreach (var clip in clips)
         {
-            Debug.Log($"Processing clip: {clip.name}");
             var match = regex.Match(clip.name.ToLower());
             if (!match.Success) 
             {
@@ -58,8 +55,6 @@ public class NoteSampleBank : MonoBehaviour
                 newFrets[currentFrets.Length] = fret;
                 recordedFretsForString[stringNum] = newFrets;
             }
-            
-            Debug.Log($"Added clip {clip.name} for pickup:{pickup}, string:{stringNum}, fret:{fret}");
         }
         Debug.Log($"Total clips in sampleMap: {sampleMap.Count}");
     }
@@ -69,7 +64,6 @@ public class NoteSampleBank : MonoBehaviour
         // Сначала пробуем найти точное совпадение
         if (sampleMap.TryGetValue((pickup, stringNum, fret), out var exactClip))
         {
-            Debug.Log($"[NoteSampleBank] Found exact sample for string {stringNum}, fret {fret}");
             return (exactClip, true, fret);
         }
 
@@ -91,7 +85,6 @@ public class NoteSampleBank : MonoBehaviour
 
             if (sampleMap.TryGetValue((pickup, stringNum, closestFret), out var nearestClip))
             {
-                Debug.Log($"[NoteSampleBank] Using nearest sample for string {stringNum}: fret {closestFret} instead of {fret}");
                 return (nearestClip, false, closestFret);
             }
         }

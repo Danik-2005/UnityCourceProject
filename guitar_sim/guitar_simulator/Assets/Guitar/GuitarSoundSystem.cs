@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.Audio;
 using System.Collections.Generic;
+using GuitarSimulator;
 
 public class GuitarSoundSystem : MonoBehaviour
 {
@@ -25,8 +26,12 @@ public class GuitarSoundSystem : MonoBehaviour
     [Header("Audio Settings")]
     public AudioMixerGroup outputMixerGroup;
     public float baseVolume = 1f;
-    public float releaseTime = 0.3f;
+    public float releaseTime = 1.5f;
     public PickupType currentPickup = PickupType.Neck;
+    
+    [Header("Connection Management")]
+    [SerializeField] private bool useConnectionManager = true;
+    [SerializeField] private float mutedVolume = 0.01f; // Громкость когда не подключено
 
     private AudioSourcePool audioPool;
     private Dictionary<(int stringNumber, int fretNumber), AudioSource> activeNotes = new();
@@ -50,6 +55,58 @@ public class GuitarSoundSystem : MonoBehaviour
             Debug.LogError("AudioSourcePool not found!");
             return;
         }
+        
+        // Подписываемся на события ConnectionManager
+        if (useConnectionManager && ConnectionManager.Instance != null)
+        {
+            ConnectionManager.Instance.OnConnectionStateChanged += UpdateAllNotesVolume;
+            Debug.Log("GuitarSoundSystem: Subscribed to ConnectionManager events");
+        }
+    }
+
+    /// <summary>
+    /// Получить текущую громкость в зависимости от состояния подключений
+    /// </summary>
+    private float GetCurrentVolume()
+    {
+        if (!useConnectionManager) return baseVolume;
+        
+        // Проверяем ConnectionManager
+        if (ConnectionManager.Instance != null)
+        {
+            if (ConnectionManager.Instance.IsFullyConnected)
+            {
+                return baseVolume; // Нормальная громкость
+            }
+            else
+            {
+                return mutedVolume; // Приглушенная громкость
+            }
+        }
+        
+        return baseVolume; // По умолчанию нормальная громкость
+    }
+
+    /// <summary>
+    /// Обновить громкость всех активных нот
+    /// </summary>
+    public void UpdateAllNotesVolume()
+    {
+        if (!useConnectionManager) return;
+        
+        float currentVolume = GetCurrentVolume();
+        
+        foreach (var note in activeNotes)
+        {
+            AudioSource source = note.Value;
+            if (source != null && source.isPlaying)
+            {
+                // Восстанавливаем модификатор громкости струны
+                int stringNumber = note.Key.Item1;
+                float stringVolumeMod = Mathf.Lerp(0.8f, 1.2f, (6f - stringNumber) / 5f);
+                source.volume = currentVolume * stringVolumeMod;
+            }
+        }
     }
 
     public (int stringNumber, int fretNumber) FindBestStringAndFret(int targetMidiNote)
@@ -72,8 +129,7 @@ public class GuitarSoundSystem : MonoBehaviour
 
     public void PlayNote(int stringNumber, int fretNumber)
     {
-        Debug.Log($"[GuitarSoundSystem] Starting note playback: String {stringNumber}, Fret {fretNumber}");
-        
+
         StopNote(stringNumber, fretNumber); // Остановить предыдущую ноту, если была
 
         // Получаем информацию о ближайшем доступном сэмпле
@@ -81,15 +137,14 @@ public class GuitarSoundSystem : MonoBehaviour
         
         if (clip == null)
         {
-            Debug.LogWarning($"[GuitarSoundSystem] No clip found for string {stringNumber}, fret {fretNumber}");
+           
             return;
         }
-        Debug.Log($"[GuitarSoundSystem] Found sample: {clip.name}, isExactMatch: {isExactMatch}, baseFret: {baseFret}");
+        
 
         AudioSource source = audioPool.GetSource();
         if (source == null)
         {
-            Debug.LogError("[GuitarSoundSystem] Failed to get audio source from pool");
             return;
         }
 
@@ -99,7 +154,7 @@ public class GuitarSoundSystem : MonoBehaviour
         
         // Базовая громкость зависит от номера струны (толстые струны громче)
         float stringVolumeMod = Mathf.Lerp(0.8f, 1.2f, (6f - stringNumber) / 5f);
-        source.volume = baseVolume * stringVolumeMod;
+        source.volume = GetCurrentVolume() * stringVolumeMod;
 
         // Применяем питч-шифтинг только если это не точное совпадение
         if (!isExactMatch)
@@ -107,17 +162,14 @@ public class GuitarSoundSystem : MonoBehaviour
             // Вычисляем разницу в ладах между целевым и базовым сэмплом
             float fretDifference = fretNumber - baseFret;
             source.pitch = Mathf.Pow(2f, fretDifference / 12f);
-            Debug.Log($"[GuitarSoundSystem] Applied pitch shifting: {fretDifference} frets, multiplier: {source.pitch:F3}");
         }
         else
         {
             source.pitch = 1f;
-            Debug.Log("[GuitarSoundSystem] Using exact sample, no pitch shifting needed");
         }
 
         source.Play();
         activeNotes[(stringNumber, fretNumber)] = source;
-        Debug.Log($"[GuitarSoundSystem] Note started playing with volume {source.volume:F2} and pitch {source.pitch:F2}");
     }
 
     public void StopNote(int stringNumber, int fretNumber, bool immediate = false)
@@ -129,12 +181,10 @@ public class GuitarSoundSystem : MonoBehaviour
             {
                 source.Stop();
                 audioPool.ReturnSource(source);
-                Debug.Log($"[GuitarSoundSystem] Immediately stopped note: String {stringNumber}, Fret {fretNumber}");
             }
             else
             {
                 StartCoroutine(FadeOutAndStop(source, releaseTime));
-                Debug.Log($"[GuitarSoundSystem] Started fade out for note: String {stringNumber}, Fret {fretNumber}");
             }
             activeNotes.Remove(noteKey);
         }
@@ -142,7 +192,6 @@ public class GuitarSoundSystem : MonoBehaviour
 
     public void StopAllNotes(bool immediate = false)
     {
-        Debug.Log("[GuitarSoundSystem] Stopping all notes");
         foreach (var note in new Dictionary<(int, int), AudioSource>(activeNotes))
         {
             StopNote(note.Key.Item1, note.Key.Item2, immediate);
@@ -164,7 +213,6 @@ public class GuitarSoundSystem : MonoBehaviour
         source.Stop();
         source.volume = startVolume;
         audioPool.ReturnSource(source);
-        Debug.Log("[GuitarSoundSystem] Completed fade out and stopped note");
     }
 
     public int GetMIDINoteFromStringAndFret(int stringNumber, int fretNumber)
@@ -188,5 +236,11 @@ public class GuitarSoundSystem : MonoBehaviour
     private void OnDisable()
     {
         StopAllNotes(true);
+        
+        // Отписываемся от событий ConnectionManager
+        if (useConnectionManager && ConnectionManager.Instance != null)
+        {
+            ConnectionManager.Instance.OnConnectionStateChanged -= UpdateAllNotesVolume;
+        }
     }
 } 
