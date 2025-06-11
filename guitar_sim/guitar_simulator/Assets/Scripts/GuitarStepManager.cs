@@ -284,8 +284,7 @@ namespace GuitarSimulator
             }
             else if (stepInfoText != null)
             {
-                stepInfoText.text = "Нет активного шага";
-                Debug.Log("Step Info: Нет активного шага");
+                stepInfoText.text = "There is info panel";
             }
             else
             {
@@ -374,8 +373,6 @@ namespace GuitarSimulator
             if (currentStepIndex < 0 || currentStepIndex >= steps.Count) return;
             
             GuitarStep step = steps[currentStepIndex];
-            
-            Debug.Log($"GuitarStepManager: Выполняется шаг {currentStepIndex + 1}/{steps.Count}: {step.stepName}");
         }
 
         private void InitializeSteps()
