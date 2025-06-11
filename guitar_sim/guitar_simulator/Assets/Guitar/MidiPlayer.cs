@@ -3,17 +3,39 @@ using System.Collections;
 using System.Collections.Generic;
 using Melanchall.DryWetMidi.Core;
 using Melanchall.DryWetMidi.Interaction;
+using System.Linq;
+using UnityEngine.UI;
+using TMPro;
 
 public class MidiPlayer : MonoBehaviour
 {
-    public string midiFilePath = "Assets/Midi/GF.mid";
-    [Range(0.1f, 2f)]
-    public float bpmMultiplier = 1f;
-
-    private List<Coroutine> activeCoroutines = new List<Coroutine>();
+    [Header("Playback Settings")]
+    [Range(50f, 200f)]
+    public float targetBpm = 120f;
+    
+    [Header("UI Integration")]
+    [SerializeField] private Slider bpmSlider;
+    [SerializeField] private TextMeshProUGUI bpmValueText;
+    
     private bool isPlaying = false;
-
-    public void LoadAndPlayMidi()
+    private MidiFileInfo currentFileInfo;
+    private List<Coroutine> activeCoroutines = new List<Coroutine>();
+    
+    private void Start()
+    {
+        // Настраиваем слайдер BPM если он назначен
+        if (bpmSlider != null)
+        {
+            bpmSlider.minValue = 50f;
+            bpmSlider.maxValue = 200f;
+            bpmSlider.value = targetBpm;
+            bpmSlider.onValueChanged.AddListener(OnBpmSliderChanged);
+        }
+        
+        UpdateBpmDisplay();
+    }
+    
+    public void PlayMidiFile(MidiFileInfo fileInfo, float bpm)
     {
         if (isPlaying)
         {
@@ -22,48 +44,109 @@ public class MidiPlayer : MonoBehaviour
 
         if (GuitarStringsManager.Instance == null)
         {
-            Debug.LogError("GuitarStringsManager not found!");
             return;
         }
 
-        isPlaying = true;
-        MidiFile midiFile = MidiFile.Read(midiFilePath);
-        TempoMap tempoMap = midiFile.GetTempoMap();
-        IEnumerable<Note> notes = midiFile.GetNotes();
-
-        foreach (var note in notes)
+        if (fileInfo == null)
         {
-            var metricTime = TimeConverter.ConvertTo<MetricTimeSpan>(note.Time, tempoMap);
-            var metricLength = TimeConverter.ConvertTo<MetricTimeSpan>(note.Length, tempoMap);
-            float noteStartTime = (float)metricTime.TotalSeconds / bpmMultiplier;
-            float noteDuration = (float)metricLength.TotalSeconds / bpmMultiplier;
+            return;
+        }
 
-            // Используем новый метод из GuitarStringsManager для поиска струны и лада
-            var (stringNumber, fretNumber) = GuitarStringsManager.Instance.FindBestStringAndFret(note.NoteNumber);
-            if (stringNumber != -1)
+        currentFileInfo = fileInfo;
+        targetBpm = bpm;
+        
+        // Обновляем слайдер если он назначен
+        if (bpmSlider != null)
+        {
+            bpmSlider.value = targetBpm;
+        }
+        
+        UpdateBpmDisplay();
+
+        try
+        {
+            isPlaying = true;
+            MidiFile midiFile = MidiFile.Read(fileInfo.filePath);
+            TempoMap tempoMap = midiFile.GetTempoMap();
+            IEnumerable<Note> notes = midiFile.GetNotes();
+
+            // Очищаем предыдущие корутины
+            activeCoroutines.Clear();
+
+            // Запускаем воспроизведение каждой ноты
+            foreach (var note in notes)
             {
-                var coroutine = StartCoroutine(PlayNoteWithTiming(noteStartTime, noteDuration, stringNumber, fretNumber));
-                activeCoroutines.Add(coroutine);
+                var metricTime = TimeConverter.ConvertTo<MetricTimeSpan>(note.Time, tempoMap);
+                var metricLength = TimeConverter.ConvertTo<MetricTimeSpan>(note.Length, tempoMap);
+                
+                // Вычисляем множитель скорости
+                float speedMultiplier = targetBpm / fileInfo.bpm;
+                
+                float noteStartTime = (float)metricTime.TotalSeconds / speedMultiplier;
+                float noteDuration = (float)metricLength.TotalSeconds / speedMultiplier;
+
+                // Используем новый метод из GuitarStringsManager для поиска струны и лада
+                var (stringNumber, fretNumber) = GuitarStringsManager.Instance.FindBestStringAndFret(note.NoteNumber);
+                if (stringNumber != -1)
+                {
+                    var coroutine = StartCoroutine(PlayNoteWithTiming(noteStartTime, noteDuration, stringNumber, fretNumber));
+                    activeCoroutines.Add(coroutine);
+                }
             }
         }
-    }
-
-    public void SetBPMMultiplier(float multiplier)
-    {
-        bpmMultiplier = Mathf.Clamp(multiplier, 0.1f, 2f);
-        if (isPlaying)
+        catch (System.Exception e)
         {
-            LoadAndPlayMidi();
+            isPlaying = false;
         }
     }
 
     private IEnumerator PlayNoteWithTiming(float startTime, float duration, int stringNumber, int fretNumber)
     {
         yield return new WaitForSeconds(startTime);
-        GuitarStringsManager.Instance.PlayNoteWithVisuals(stringNumber, fretNumber);
         
-        yield return new WaitForSeconds(duration);
-        GuitarStringsManager.Instance.StopNoteWithVisuals(stringNumber, fretNumber);
+        if (isPlaying)
+        {
+            GuitarStringsManager.Instance.PlayNoteWithVisuals(stringNumber, fretNumber);
+            
+            yield return new WaitForSeconds(duration);
+            
+            if (isPlaying)
+            {
+                GuitarStringsManager.Instance.StopNoteWithVisuals(stringNumber, fretNumber);
+            }
+        }
+    }
+
+    public void SetTargetBpm(float bpm)
+    {
+        targetBpm = Mathf.Clamp(bpm, 50f, 200f);
+        
+        // Обновляем слайдер если он назначен
+        if (bpmSlider != null)
+        {
+            bpmSlider.value = targetBpm;
+        }
+        
+        UpdateBpmDisplay();
+        
+        // Если воспроизведение активно, перезапускаем с новым BPM
+        if (isPlaying && currentFileInfo != null)
+        {
+            PlayMidiFile(currentFileInfo, targetBpm);
+        }
+    }
+
+    private void OnBpmSliderChanged(float bpmValue)
+    {
+        SetTargetBpm(bpmValue);
+    }
+    
+    private void UpdateBpmDisplay()
+    {
+        if (bpmValueText != null)
+        {
+            bpmValueText.text = $"BPM: {targetBpm:F0}";
+        }
     }
 
     public void StopPlayback()
@@ -83,5 +166,39 @@ public class MidiPlayer : MonoBehaviour
         {
             GuitarStringsManager.Instance.StopAllStrings();
         }
+    }
+
+    public bool IsPlaying()
+    {
+        return isPlaying;
+    }
+
+    public MidiFileInfo GetCurrentFileInfo()
+    {
+        return currentFileInfo;
+    }
+
+    public float GetCurrentBpm()
+    {
+        return targetBpm;
+    }
+    
+    // Методы для интеграции с UI
+    public void SetBpmSlider(Slider slider)
+    {
+        bpmSlider = slider;
+        if (bpmSlider != null)
+        {
+            bpmSlider.minValue = 50f;
+            bpmSlider.maxValue = 200f;
+            bpmSlider.value = targetBpm;
+            bpmSlider.onValueChanged.AddListener(OnBpmSliderChanged);
+        }
+    }
+    
+    public void SetBpmValueText(TextMeshProUGUI text)
+    {
+        bpmValueText = text;
+        UpdateBpmDisplay();
     }
 }

@@ -10,7 +10,7 @@ public class AudioSourcePool : MonoBehaviour
     [Header("Audio Settings")]
     public AudioSource audioSourcePrefab;
     public AudioMixerGroup guitarMixerGroup; // Ссылка на группу Guitar в миксере
-    public int poolSize = 32;
+    public int poolSize = 64;
 
     private Queue<AudioSource> inactiveSources = new Queue<AudioSource>();
     private HashSet<AudioSource> activeSources = new HashSet<AudioSource>();

@@ -93,10 +93,7 @@ public class TremoloController : MonoBehaviour
             Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
             RaycastHit hit;
 
-            // Визуализируем луч для отладки
-            Debug.DrawRay(ray.origin, ray.direction * 100f, Color.red, 1f);
-
-            if (tremoloArmCollider != null && Physics.Raycast(ray, out hit))
+            if (tremoloArmCollider != null && Physics.Raycast(ray, out hit, Mathf.Infinity, Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore))
             {
                 if (hit.collider == tremoloArmCollider)
                 {

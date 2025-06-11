@@ -6,10 +6,17 @@ public class GuitarInteractionSetup : MonoBehaviour
 {
     private void Awake()
     {
-        // Добавляем PhysicsRaycaster на камеру
-        if (GetComponent<PhysicsRaycaster>() == null)
+        // Удаляем стандартный PhysicsRaycaster если он есть
+        var existingRaycaster = GetComponent<PhysicsRaycaster>();
+        if (existingRaycaster != null && !(existingRaycaster is CustomPhysicsRaycaster))
         {
-            var raycaster = gameObject.AddComponent<PhysicsRaycaster>();
+            DestroyImmediate(existingRaycaster);
+        }
+
+        // Добавляем кастомный PhysicsRaycaster на камеру
+        if (GetComponent<CustomPhysicsRaycaster>() == null)
+        {
+            var raycaster = gameObject.AddComponent<CustomPhysicsRaycaster>();
         }
 
         // Проверяем наличие EventSystem в сцене

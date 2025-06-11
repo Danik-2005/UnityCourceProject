@@ -71,7 +71,7 @@ public class WireBuilder : Editor
         Ray ray = HandleUtility.GUIPointToWorldRay(Event.current.mousePosition);
 
         // check hit
-        if (!Physics.Raycast(ray, out RaycastHit hit))
+        if (!Physics.Raycast(ray, out RaycastHit hit, Mathf.Infinity, Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore))
         {
             return;
         }
