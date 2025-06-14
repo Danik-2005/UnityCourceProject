@@ -11,6 +11,7 @@ namespace GuitarSimulator
         [Header("Button Settings")]
         [SerializeField] private ModalWindow targetWindow;
         [SerializeField] private ButtonAction action = ButtonAction.Toggle;
+        [SerializeField] private bool keepButtonActive = true; // Держать кнопку активной
         
         private Button button;
         
@@ -37,6 +38,18 @@ namespace GuitarSimulator
             {
                 Debug.LogWarning("SimpleModalButton: Не назначено целевое окно!");
             }
+            
+            // Убеждаемся, что кнопка активна при старте
+            EnsureButtonActive();
+        }
+        
+        void Update()
+        {
+            // Постоянно проверяем, что кнопка активна (если включена опция)
+            if (keepButtonActive)
+            {
+                EnsureButtonActive();
+            }
         }
         
         /// <summary>
@@ -45,6 +58,8 @@ namespace GuitarSimulator
         private void OnButtonClick()
         {
             if (targetWindow == null) return;
+            
+            Debug.Log($"[SimpleModalButton] Button clicked on {gameObject.name}, action: {action}");
             
             switch (action)
             {
@@ -60,6 +75,33 @@ namespace GuitarSimulator
                     targetWindow.Toggle();
                     break;
             }
+            
+            // Убеждаемся, что кнопка остается активной после клика
+            if (keepButtonActive)
+            {
+                StartCoroutine(EnsureButtonActiveAfterFrame());
+            }
+        }
+        
+        /// <summary>
+        /// Убедиться, что кнопка активна
+        /// </summary>
+        private void EnsureButtonActive()
+        {
+            if (button != null && !button.interactable)
+            {
+                Debug.LogWarning($"[SimpleModalButton] Button {gameObject.name} was disabled, re-enabling...");
+                button.interactable = true;
+            }
+        }
+        
+        /// <summary>
+        /// Убедиться, что кнопка активна после кадра (для случаев, когда что-то отключает её)
+        /// </summary>
+        private System.Collections.IEnumerator EnsureButtonActiveAfterFrame()
+        {
+            yield return null; // Ждем один кадр
+            EnsureButtonActive();
         }
         
         /// <summary>
@@ -76,6 +118,26 @@ namespace GuitarSimulator
         public void SetAction(ButtonAction newAction)
         {
             action = newAction;
+        }
+        
+        /// <summary>
+        /// Принудительно активировать кнопку
+        /// </summary>
+        public void ForceActivate()
+        {
+            if (button != null)
+            {
+                button.interactable = true;
+                Debug.Log($"[SimpleModalButton] Button {gameObject.name} force activated");
+            }
+        }
+        
+        /// <summary>
+        /// Получить текущее состояние кнопки
+        /// </summary>
+        public bool IsButtonActive()
+        {
+            return button != null && button.interactable;
         }
         
         private void OnDestroy()

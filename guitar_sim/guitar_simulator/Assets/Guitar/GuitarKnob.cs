@@ -31,9 +31,14 @@ public class GuitarKnob : MonoBehaviour, IPointerEnterHandler, IPointerExitHandl
 
         // Проверяем наличие коллайдера
         var collider = GetComponent<Collider>();
-        if (collider != null && !collider.isTrigger)
+
+        // Проверяем PhysicsRaycaster на камере
+        Camera mainCamera = Camera.main;
+
+        // Автоматически находим контроллер, если не назначен
+        if (controller == null)
         {
-            collider.isTrigger = true;
+            controller = FindObjectOfType<GuitarKnobsController>();
         }
 
         // Устанавливаем начальный поворот
@@ -69,6 +74,8 @@ public class GuitarKnob : MonoBehaviour, IPointerEnterHandler, IPointerExitHandl
                 
                 // Обновляем поворот крутилки
                 UpdateRotation(newValue);
+
+                Debug.Log($"Knob {knobType} value changed to: {newValue:F2}");
             }
         }
     }

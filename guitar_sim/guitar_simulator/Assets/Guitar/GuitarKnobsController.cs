@@ -48,8 +48,6 @@ public class GuitarKnobsController : MonoBehaviour
         // Применяем начальные значения
         UpdateAllParameters();
 
-        // Выводим текущие значения для проверки
-        PrintCurrentMixerValues();
     }
 
     private void VerifyMixerParameters()
@@ -73,20 +71,12 @@ public class GuitarKnobsController : MonoBehaviour
 
         parametersVerified = volumeExists && toneExists && bassExists && pitchExists;
         
-        if (!parametersVerified)
+        if (parametersVerified)
+            Debug.Log("All AudioMixer parameters verified successfully!");
+        else
             Debug.LogError("Some AudioMixer parameters are missing! Check if they are exposed in the AudioMixer.");
     }
 
-    private void PrintCurrentMixerValues()
-    {
-        if (!parametersVerified) return;
-
-        float currentVolume, currentTone, currentBass, currentPitchValue;
-        guitarMixer.GetFloat(volumeParameter, out currentVolume);
-        guitarMixer.GetFloat(toneParameter, out currentTone);
-        guitarMixer.GetFloat(bassParameter, out currentBass);
-        guitarMixer.GetFloat(pitchParameter, out currentPitchValue);
-    }
 
     public void UpdateAllParameters()
     {
