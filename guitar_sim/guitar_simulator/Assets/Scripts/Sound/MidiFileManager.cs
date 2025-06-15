@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using Melanchall.DryWetMidi.Core;
 using Melanchall.DryWetMidi.Interaction;
+using System;
 
 [System.Serializable]
 public class MidiFileInfo
@@ -22,7 +23,7 @@ public class MidiFileInfo
 public class MidiFileManager : MonoBehaviour
 {
     [Header("MIDI Files Settings")]
-    [SerializeField] private string midiFolderPath = "Midi";
+    [SerializeField] private string midiFolderPath = "StreamingAssets/Midi";
     [SerializeField] private bool loadOnStart = true;
     
     [Header("File Information")]
@@ -37,6 +38,7 @@ public class MidiFileManager : MonoBehaviour
     
     private MidiFileInfo selectedFile;
     private MidiFileInfo hoveredFile;
+    private string logFilePath;
     
     public List<MidiFileInfo> MidiFiles => midiFiles;
     public MidiFileInfo SelectedFile => selectedFile;
@@ -44,34 +46,85 @@ public class MidiFileManager : MonoBehaviour
     
     private void Start()
     {
+        // Настраиваем логирование
+        string logDir = Path.Combine(Application.persistentDataPath, "Logs");
+        if (!Directory.Exists(logDir))
+        {
+            Directory.CreateDirectory(logDir);
+        }
+        logFilePath = Path.Combine(logDir, $"midi_manager_{DateTime.Now:yyyyMMdd_HHmmss}.txt");
+        
+        LogMessage("MidiFileManager Start() called");
+        LogMessage($"loadOnStart: {loadOnStart}");
+        
+        // Принудительно устанавливаем правильный путь
+        midiFolderPath = "StreamingAssets/Midi";
+        LogMessage($"Set midiFolderPath to: {midiFolderPath}");
+        
         if (loadOnStart)
         {
+            LogMessage("Calling LoadMidiFiles() from Start()");
             LoadMidiFiles();
         }
+        else
+        {
+            LogMessage("loadOnStart is false, not loading files automatically");
+        }
+    }
+    
+    private void LogMessage(string message)
+    {
+        string timestamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+        string logEntry = $"[{timestamp}] {message}";
+        
+        try
+        {
+            File.AppendAllText(logFilePath, logEntry + Environment.NewLine);
+        }
+        catch (Exception e)
+        {
+            Debug.LogError($"Failed to write to log file: {e.Message}");
+        }
+        
+        Debug.Log(logEntry);
     }
     
     [ContextMenu("Load MIDI Files")]
     public void LoadMidiFiles()
     {
+        LogMessage("=== LoadMidiFiles() called ===");
         midiFiles.Clear();
         
         // Получаем путь к папке MIDI
         string fullPath = Path.Combine(Application.dataPath, midiFolderPath);
         
+        LogMessage($"Looking for MIDI files in: {fullPath}");
+        LogMessage($"Application.dataPath: {Application.dataPath}");
+        LogMessage($"midiFolderPath: {midiFolderPath}");
+        
         if (!Directory.Exists(fullPath))
         {
-            Debug.LogError($"MIDI folder not found: {fullPath}");
+            LogMessage($"ERROR: MIDI folder not found: {fullPath}");
             return;
         }
+        
+        LogMessage($"MIDI folder found: {fullPath}");
         
         // Получаем все .mid файлы
         string[] midiFilePaths = Directory.GetFiles(fullPath, "*.mid", SearchOption.TopDirectoryOnly);
         
-        Debug.Log($"Found {midiFilePaths.Length} MIDI files in {fullPath}");
+        LogMessage($"Found {midiFilePaths.Length} MIDI files in {fullPath}");
+        
+        foreach (string filePath in midiFilePaths)
+        {
+            LogMessage($"Found file: {filePath}");
+        }
         
         foreach (string filePath in midiFilePaths)
         {
             string fileName = Path.GetFileNameWithoutExtension(filePath);
+            
+            LogMessage($"Processing file: {fileName} at path: {filePath}");
             
             // Создаем MidiFileInfo
             MidiFileInfo fileInfo = new MidiFileInfo
@@ -82,31 +135,38 @@ public class MidiFileManager : MonoBehaviour
                 isLoaded = true
             };
             
-            Debug.Log($"Starting to parse MIDI file: {fileName}");
+            LogMessage($"Starting to parse MIDI file: {fileName}");
             
             // Парсим информацию о файле используя DryWetMidi
             ParseMidiInfoWithDryWetMidi(fileInfo);
             
             midiFiles.Add(fileInfo);
             
-            Debug.Log($"Successfully loaded MIDI file: {fileName} (Duration: {fileInfo.duration:F1}s, BPM: {fileInfo.bpm:F1})");
+            LogMessage($"Successfully loaded MIDI file: {fileName} (Duration: {fileInfo.duration:F1}s, BPM: {fileInfo.bpm:F1})");
         }
         
-        Debug.Log($"Successfully loaded {midiFiles.Count} MIDI files");
+        LogMessage($"Successfully loaded {midiFiles.Count} MIDI files");
+        LogMessage("=== LoadMidiFiles() completed ===");
     }
     
     private void ParseMidiInfoWithDryWetMidi(MidiFileInfo fileInfo)
     {
         try
         {
+            LogMessage($"Parsing MIDI file: {fileInfo.fileName}");
+            
             // Загружаем MIDI файл используя DryWetMidi
             MidiFile midiFile = MidiFile.Read(fileInfo.filePath);
+            
+            LogMessage($"MIDI file loaded successfully: {fileInfo.fileName}");
             
             // Получаем карту темпа
             TempoMap tempoMap = midiFile.GetTempoMap();
             
             // Получаем все ноты
             IEnumerable<Note> notes = midiFile.GetNotes();
+            
+            LogMessage($"Found {notes.Count()} notes in {fileInfo.fileName}");
             
             // Находим последнюю ноту для определения длительности
             long maxTime = 0;
@@ -135,11 +195,12 @@ public class MidiFileManager : MonoBehaviour
                 fileInfo.bpm = defaultBpm;
             }
             
-            Debug.Log($"Parsed {fileInfo.fileName}: BPM={fileInfo.bpm:F1}, Duration={fileInfo.duration:F1}s");
+            LogMessage($"Successfully parsed {fileInfo.fileName}: BPM={fileInfo.bpm:F1}, Duration={fileInfo.duration:F1}s");
         }
         catch (System.Exception e)
         {
-            Debug.LogWarning($"Failed to parse MIDI info for {fileInfo.fileName}: {e.Message}");
+            LogMessage($"ERROR parsing MIDI file {fileInfo.fileName}: {e.Message}");
+            LogMessage($"Stack trace: {e.StackTrace}");
             fileInfo.bpm = defaultBpm;
             fileInfo.duration = 60f; // 1 минута по умолчанию
         }

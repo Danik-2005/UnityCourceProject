@@ -18,7 +18,7 @@ public class FretTrigger : MonoBehaviour
 
     private void OnMouseExit()
     {
-        // Р•СЃР»Рё РјС‹С€СЊ РїРѕРєРёРґР°РµС‚ РєРѕР»Р»Р°Р№РґРµСЂ, С‚РѕР¶Рµ РѕСЃС‚Р°РЅР°РІР»РёРІР°РµРј Р·РІСѓРє
+        // Если мышь покидает коллайдер, тоже останавливаем звук
         parentString.OnFretReleased(fretNumber);
     }
-} 
+}

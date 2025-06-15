@@ -96,6 +96,7 @@ public class MidiPlayer : MonoBehaviour
         }
         catch (System.Exception e)
         {
+            Debug.LogError($"Error loading MIDI file {fileInfo.fileName}: {e.Message}");
             isPlaying = false;
         }
     }

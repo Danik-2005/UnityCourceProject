@@ -158,7 +158,7 @@ public class MidiFileButton : MonoBehaviour, IPointerClickHandler, IPointerEnter
         
         SetSelected(true);
         
-        Debug.Log($"Selected MIDI file: {midiFileInfo.fileName}");
+        Debug.Log($"Selected MIDI file: {midiFileInfo.fileName} (BPM: {midiFileInfo.bpm:F0})");
     }
     
     public void SetSelected(bool selected)
