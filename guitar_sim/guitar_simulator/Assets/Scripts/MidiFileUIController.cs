@@ -245,6 +245,18 @@ public class MidiFileUIController : MonoBehaviour
         
         selectedButton = newSelectedButton;
         
+        // Обновляем слайдер BPM значением из выбранного файла
+        if (selectedButton != null && midiPlayer != null)
+        {
+            var fileInfo = selectedButton.GetMidiFileInfo();
+            if (fileInfo != null)
+            {
+                // Устанавливаем BPM из выбранного файла
+                midiPlayer.SetTargetBpm(fileInfo.bpm);
+                Debug.Log($"Updated BPM slider to {fileInfo.bpm:F0} for file: {fileInfo.fileName}");
+            }
+        }
+        
         // Обновляем состояние кнопок
         UpdateButtonStates();
     }
